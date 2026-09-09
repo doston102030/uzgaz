@@ -1,0 +1,17 @@
+{
+  "@@locale": "uz",
+  "appName": "Gaz & Energiya",
+  "home": "Bosh sahifa",
+  "catalog": "Katalog",
+  "orders": "Buyurtmalar",
+  "map": "Xarita",
+  "profile": "Profil",
+  "search": "Mahsulot yoki kompaniya qidirish",
+  "addToCart": "Savatga qo\u2018shish",
+  "checkout": "Rasmiylashtirish",
+  "delivery": "Yetkazib berish",
+  "selfPickup": "O\u2018zim borib olaman",
+  "total": "Jami",
+  "confirmOrder": "Buyurtmani tasdiqlash",
+  "orderPlaced": "Buyurtma qabul qilindi!"
+}

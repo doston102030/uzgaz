@@ -1,0 +1,17 @@
+{
+  "@@locale": "ru",
+  "appName": "Gaz & Energiya",
+  "home": "Главная",
+  "catalog": "Каталог",
+  "orders": "Заказы",
+  "map": "Карта",
+  "profile": "Профиль",
+  "search": "Поиск товара или компании",
+  "addToCart": "В корзину",
+  "checkout": "Оформить заказ",
+  "delivery": "Доставка",
+  "selfPickup": "Самовывоз",
+  "total": "Итого",
+  "confirmOrder": "Подтвердить заказ",
+  "orderPlaced": "Заказ принят!"
+}

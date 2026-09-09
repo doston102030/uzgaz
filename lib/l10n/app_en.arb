@@ -1,0 +1,17 @@
+{
+  "@@locale": "en",
+  "appName": "Gaz & Energiya",
+  "home": "Home",
+  "catalog": "Catalog",
+  "orders": "Orders",
+  "map": "Map",
+  "profile": "Profile",
+  "search": "Search for a product or company",
+  "addToCart": "Add to cart",
+  "checkout": "Checkout",
+  "delivery": "Delivery",
+  "selfPickup": "Self pickup",
+  "total": "Total",
+  "confirmOrder": "Confirm order",
+  "orderPlaced": "Order placed!"
+}
