@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/app.dart';
-
-// Firebase bootstrap (Phase 9) — uncomment once `flutterfire configure`
-// has generated firebase_options.dart for this project:
-//
-// import 'package:firebase_core/firebase_core.dart';
-// import 'firebase_options.dart';
+import 'core/network/supabase_client.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,7 +24,8 @@ Future<void> main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await dotenv.load(fileName: '.env');
+  await SupabaseService.init();
 
   runApp(const ProviderScope(child: GazEnergiyaApp()));
 }

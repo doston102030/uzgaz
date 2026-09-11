@@ -14,6 +14,7 @@ coverage/
 
 # Secrets — never commit these
 firebase_options.dart
+firebase-debug.log
 **/android/key.properties
 **/android/**/*.jks
 **/android/**/*.keystore

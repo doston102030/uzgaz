@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -94,22 +95,47 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
               const SizedBox(width: AppDimensions.gutter),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      visual.accent.withValues(alpha: c.isDark ? 0.28 : 0.16),
-                      c.background,
-                    ],
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 40),
-                  child: ProductIllustration(visual: visual, showStage: false),
-                ),
-              ),
+              background: product.imageUrl.startsWith('http')
+                  ? Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        CachedNetworkImage(
+                          imageUrl: product.imageUrl,
+                          fit: BoxFit.cover,
+                          placeholder: (_, __) => ProductIllustration(visual: visual),
+                          errorWidget: (_, __, ___) => ProductIllustration(visual: visual),
+                        ),
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                c.background.withValues(alpha: 0.9),
+                              ],
+                              stops: const [0.6, 1],
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            visual.accent.withValues(alpha: c.isDark ? 0.28 : 0.16),
+                            c.background,
+                          ],
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 40),
+                        child: ProductIllustration(visual: visual, showStage: false),
+                      ),
+                    ),
             ),
           ),
           SliverToBoxAdapter(

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../app/theme/colors.dart';
@@ -45,7 +46,19 @@ class ProductCard extends StatelessWidget {
               SizedBox(
                 height: AppDimensions.productImageHeight,
                 width: double.infinity,
-                child: ProductIllustration(visual: visual, radius: AppDimensions.radiusSmall),
+                child: product.imageUrl.startsWith('http')
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusSmall),
+                        child: CachedNetworkImage(
+                          imageUrl: product.imageUrl,
+                          fit: BoxFit.cover,
+                          placeholder: (_, __) =>
+                              ProductIllustration(visual: visual, radius: AppDimensions.radiusSmall),
+                          errorWidget: (_, __, ___) =>
+                              ProductIllustration(visual: visual, radius: AppDimensions.radiusSmall),
+                        ),
+                      )
+                    : ProductIllustration(visual: visual, radius: AppDimensions.radiusSmall),
               ),
               if (badge != null)
                 Positioned(

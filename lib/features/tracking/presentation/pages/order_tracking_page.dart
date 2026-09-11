@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,6 +20,8 @@ import '../../../../core/widgets/order_status_widget.dart';
 import '../../../../core/widgets/price_row.dart';
 import '../../../../core/widgets/product_card.dart';
 import '../../../../core/widgets/product_illustration.dart';
+import '../../../../core/widgets/pulsing_marker.dart';
+import '../../../../core/utils/dash_path.dart';
 import '../../../orders/domain/entities/order.dart';
 import '../../../orders/presentation/providers/order_provider.dart';
 
@@ -334,41 +338,55 @@ class _TrackingMap extends StatelessWidget {
               grid: c.isDark ? const Color(0xFF1B2434) : const Color(0xFFE3E9F2),
               bg: c.isDark ? const Color(0xFF0D141F) : const Color(0xFFEFF3F8),
               block: c.isDark ? const Color(0xFF141D2B) : const Color(0xFFE6ECF4),
+              isDark: c.isDark,
             ),
           ),
-          // Vehicle marker
+          // Vehicle marker — pulses to read as a live, moving position.
           Align(
             alignment: const Alignment(0.05, 0.12),
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: c.primary,
-                shape: BoxShape.circle,
-                border: Border.all(color: c.surface, width: 3),
-                boxShadow: [
-                  BoxShadow(
-                    color: c.primary.withValues(alpha: 0.4),
-                    blurRadius: 18,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+            child: PulsingMarker(
+              color: c.primary,
+              ringSize: 46,
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: c.primary,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: c.surface, width: 3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: c.primary.withValues(alpha: 0.4),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.local_shipping_rounded,
+                    color: Colors.white, size: 20),
               ),
-              child: const Icon(Icons.local_shipping_rounded,
-                  color: Colors.white, size: 20),
             ),
           ),
           // Destination marker
           Align(
             alignment: const Alignment(0.72, 0.62),
-            child: Container(
-              width: 26,
-              height: 26,
-              decoration: BoxDecoration(
-                color: c.surface,
-                shape: BoxShape.circle,
-                border: Border.all(color: c.primary, width: 4),
-                boxShadow: c.shadowSm,
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: c.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: c.primary, width: 2.5),
+                    boxShadow: c.shadowSm,
+                  ),
+                  child: Icon(Icons.flag_rounded, size: 14, color: c.primary),
+                ),
+                CustomPaint(
+                  size: const Size(8, 6),
+                  painter: _PinTailPainter(c.primary),
+                ),
+              ],
             ),
           ),
           Positioned(
@@ -495,27 +513,33 @@ class _TrackPainter extends CustomPainter {
     required this.grid,
     required this.bg,
     required this.block,
+    required this.isDark,
   });
 
   final Color line;
   final Color grid;
   final Color bg;
   final Color block;
+  final bool isDark;
 
   @override
   void paint(Canvas canvas, Size size) {
     canvas.drawRect(Offset.zero & size, Paint()..color = bg);
 
-    final blockPaint = Paint()..color = block;
+    final random = math.Random(3);
+    final shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: isDark ? 0.35 : 0.07)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+    final shades = [block, Color.lerp(block, bg, 0.4)!, Color.lerp(block, grid, 0.3)!];
+
     for (double y = -10; y < size.height; y += 66) {
       for (double x = -10; x < size.width; x += 82) {
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(x + 8, y + 8, 56, 38),
-            const Radius.circular(6),
-          ),
-          blockPaint,
+        final rrect = RRect.fromRectAndRadius(
+          Rect.fromLTWH(x + 8, y + 8, 56, 38),
+          const Radius.circular(6),
         );
+        canvas.drawRRect(rrect.shift(const Offset(0, 2)), shadowPaint);
+        canvas.drawRRect(rrect, Paint()..color = shades[random.nextInt(shades.length)]);
       }
     }
 
@@ -530,6 +554,8 @@ class _TrackPainter extends CustomPainter {
       canvas.drawLine(Offset(x, -10), Offset(x, size.height + 10), roadPaint);
     }
 
+    // Route: solid where the driver has already been, dashed for what's
+    // still ahead — the split alone communicates progress at a glance.
     final path = Path()
       ..moveTo(size.width * 0.52, size.height * 0.56)
       ..cubicTo(
@@ -543,8 +569,13 @@ class _TrackPainter extends CustomPainter {
         size.width * 0.86, size.height * 0.81,
       );
 
+    final metric = path.computeMetrics().first;
+    final splitAt = metric.length * 0.32;
+    final traveled = metric.extractPath(0, splitAt);
+    final remaining = metric.extractPath(splitAt, metric.length);
+
     canvas.drawPath(
-      path,
+      traveled,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 9
@@ -552,15 +583,42 @@ class _TrackPainter extends CustomPainter {
         ..color = line.withValues(alpha: 0.18),
     );
     canvas.drawPath(
-      path,
+      traveled,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 4
         ..strokeCap = StrokeCap.round
         ..color = line,
     );
+    canvas.drawPath(
+      dashPath(remaining, dashLength: 9, gapLength: 7),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4
+        ..strokeCap = StrokeCap.round
+        ..color = line.withValues(alpha: 0.45),
+    );
   }
 
   @override
   bool shouldRepaint(covariant _TrackPainter old) => old.line != line;
+}
+
+class _PinTailPainter extends CustomPainter {
+  _PinTailPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..lineTo(size.width, 0)
+      ..close();
+    canvas.drawPath(path, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(covariant _PinTailPainter old) => old.color != color;
 }

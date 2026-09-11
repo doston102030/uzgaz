@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../../../app/theme/dimensions.dart';
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/typography.dart';
@@ -175,7 +177,18 @@ class _SellerProductCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          EnergyAvatar(visual: visual, size: 56),
+          product.imageUrl != null
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(56 * 0.32),
+                  child: CachedNetworkImage(
+                    imageUrl: product.imageUrl!,
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
+                    errorWidget: (_, __, ___) => EnergyAvatar(visual: visual, size: 56),
+                  ),
+                )
+              : EnergyAvatar(visual: visual, size: 56),
           const SizedBox(width: AppDimensions.space12),
           Expanded(
             child: Column(

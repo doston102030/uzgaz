@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../domain/entities/app_user.dart';
 
-/// Auth state placeholder. Wire this up to Firebase Auth in Phase 9 —
+/// Auth state placeholder. Wire this up to Supabase Auth next —
 /// for now it drives the Splash → Onboarding/Login → Home redirect logic
 /// with a simple mock sign-in, and carries the [UserRole] the router
 /// uses to pick the buyer / seller / admin shell.
@@ -21,7 +21,7 @@ class AuthNotifier extends StateNotifier<AppUser?> {
   }
 
   /// Demo-only entry point for the admin shell (mirrors what a real build
-  /// would gate behind a Firebase custom claim / Firestore role field).
+  /// would gate behind a Supabase `role` column / RLS policy).
   Future<void> signInAsAdmin() async {
     await Future.delayed(const Duration(milliseconds: 500));
     state = const AppUser(
@@ -47,6 +47,22 @@ class AuthNotifier extends StateNotifier<AppUser?> {
     final current = state;
     if (current == null) return;
     state = current.copyWith(role: UserRole.buyer);
+  }
+
+  /// Called once [AppImagePickerField] finishes uploading a new avatar to
+  /// the `avatars` Supabase Storage bucket.
+  void updatePhotoUrl(String url) {
+    final current = state;
+    if (current == null) return;
+    state = AppUser(
+      id: current.id,
+      fullName: current.fullName,
+      phone: current.phone,
+      photoUrl: url,
+      email: current.email,
+      role: current.role,
+      sellerId: current.sellerId,
+    );
   }
 
   void signOut() => state = null;

@@ -24,6 +24,7 @@ class SellerProfile extends Equatable {
     this.rejectionReason,
     this.offersDelivery = true,
     this.offersPickup = true,
+    this.logoUrl,
   });
 
   final String id;
@@ -45,9 +46,14 @@ class SellerProfile extends Equatable {
   final bool offersDelivery;
   final bool offersPickup;
 
+  /// Public Supabase Storage URL of the company logo (`company-logos`
+  /// bucket) — null until the seller uploads one.
+  final String? logoUrl;
+
   SellerProfile copyWith({
     SellerStatus? status,
     String? rejectionReason,
+    String? logoUrl,
   }) =>
       SellerProfile(
         id: id,
@@ -68,6 +74,7 @@ class SellerProfile extends Equatable {
         rejectionReason: rejectionReason ?? this.rejectionReason,
         offersDelivery: offersDelivery,
         offersPickup: offersPickup,
+        logoUrl: logoUrl ?? this.logoUrl,
       );
 
   @override

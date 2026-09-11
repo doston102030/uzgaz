@@ -25,6 +25,7 @@ class SellerProfilesNotifier extends StateNotifier<List<SellerProfile>> {
     required int deliveryFee,
     required bool offersDelivery,
     required bool offersPickup,
+    String? logoUrl,
   }) {
     final profile = SellerProfile(
       id: 's${DateTime.now().millisecondsSinceEpoch}',
@@ -40,6 +41,7 @@ class SellerProfilesNotifier extends StateNotifier<List<SellerProfile>> {
       createdAt: DateTime.now(),
       offersDelivery: offersDelivery,
       offersPickup: offersPickup,
+      logoUrl: logoUrl,
     );
     state = [profile, ...state];
     return profile;
@@ -103,6 +105,7 @@ class SellerProductsNotifier extends StateNotifier<List<SellerProduct>> {
     required int stockQty,
     String unit = 'dona',
     int? oldPrice,
+    String? imageUrl,
   }) {
     final product = SellerProduct(
       id: 'sp${DateTime.now().millisecondsSinceEpoch}',
@@ -116,6 +119,7 @@ class SellerProductsNotifier extends StateNotifier<List<SellerProduct>> {
       unit: unit,
       moderationStatus: ProductModerationStatus.pending,
       createdAt: DateTime.now(),
+      imageUrl: imageUrl,
     );
     state = [product, ...state];
     return product;
