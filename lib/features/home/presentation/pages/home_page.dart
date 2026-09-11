@@ -46,17 +46,29 @@ class HomePage extends ConsumerWidget {
         onRefresh: () => Future<void>.delayed(const Duration(milliseconds: 700)),
         child: CustomScrollView(
           slivers: [
-            const SliverToBoxAdapter(child: _HomeHeader()),
-            if (activeOrder != null)
-              SliverToBoxAdapter(
-                child: Transform.translate(
-                  offset: const Offset(0, -26),
-                  child: Padding(
-                    padding: AppDimensions.pagePadding,
-                    child: _LiveOrderCard(order: activeOrder),
-                  ),
-                ),
+            // Header and the floating live-order card must live in the same
+            // SliverToBoxAdapter (as Column siblings), not as two separate
+            // slivers each carrying its own Transform: two sibling slivers
+            // overlapped via a negative Transform.translate paint outside
+            // their own sliver bounds, which some web renderers clip at the
+            // sliver boundary — the card's top row (status + order number)
+            // was getting sliced off right at the header's bottom edge.
+            SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const _HomeHeader(),
+                  if (activeOrder != null)
+                    Transform.translate(
+                      offset: const Offset(0, -26),
+                      child: Padding(
+                        padding: AppDimensions.pagePadding,
+                        child: _LiveOrderCard(order: activeOrder),
+                      ),
+                    ),
+                ],
               ),
+            ),
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.only(top: activeOrder != null ? 0 : AppDimensions.space20),
@@ -200,14 +212,19 @@ class _HomeHeader extends ConsumerWidget {
       ),
       decoration: BoxDecoration(
         gradient: c.brandGradient,
+        // Matches the live-order card's own radius (AppDimensions.radiusLarge)
+        // so the two edges line up at the seam. radiusSheet (32) used to be
+        // wider than the gutter (20) the card sits inset by, which left the
+        // gradient's curve — and its shadow — exposed as a stray triangle of
+        // background peeking past the card at both bottom corners.
         borderRadius: const BorderRadius.vertical(
-          bottom: Radius.circular(AppDimensions.radiusSheet),
+          bottom: Radius.circular(AppDimensions.radiusLarge),
         ),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withValues(alpha: c.isDark ? 0.28 : 0.24),
-            blurRadius: 30,
-            offset: const Offset(0, 10),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
           ),
         ],
       ),

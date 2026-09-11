@@ -30,6 +30,10 @@
 	<string>Yaqin atrofdagi kompaniyalar va stansiyalarni xaritada ko‘rsatish hamda buyurtmani to‘g‘ri manzilga yetkazish uchun joylashuvingiz kerak.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Buyurtmangiz yetkazib berilishini real vaqtda kuzatish uchun joylashuvdan foydalanamiz.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Mahsulot, profil yoki firma rasmini suratga olish uchun kameradan foydalanamiz.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Mahsulot, profil yoki firma uchun galereyadan rasm tanlash uchun foydalanamiz.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

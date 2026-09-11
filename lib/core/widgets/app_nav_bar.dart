@@ -169,29 +169,41 @@ class _NavBarDelegate extends SliverPersistentHeaderDelegate {
                       opacity: (1 - t * 1.4).clamp(0.0, 1.0),
                       child: Transform.translate(
                         offset: Offset(0, -8 * t),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: AppDimensions.gutter),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Text(
-                                title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTypography.title1
-                                    .copyWith(color: c.textPrimary),
-                              ),
-                              if (subtitle != null)
+                        // The collapse animation can briefly hand this Column
+                        // less height than the title+subtitle need (e.g. the
+                        // very first laid-out frame). OverflowBox lets it
+                        // measure itself at its natural size instead of
+                        // throwing a RenderFlex overflow — the ClipRect
+                        // above still trims anything that doesn't fit.
+                        child: OverflowBox(
+                          alignment: Alignment.topLeft,
+                          minHeight: 0,
+                          maxHeight: double.infinity,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: AppDimensions.gutter),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
                                 Text(
-                                  subtitle!,
+                                  title,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: AppTypography.subhead
-                                      .copyWith(color: c.textSecondary),
+                                  style: AppTypography.title1
+                                      .copyWith(color: c.textPrimary),
                                 ),
-                            ],
+                                if (subtitle != null)
+                                  Text(
+                                    subtitle!,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTypography.subhead
+                                        .copyWith(color: c.textSecondary),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

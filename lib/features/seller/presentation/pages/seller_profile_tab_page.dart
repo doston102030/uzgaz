@@ -55,7 +55,7 @@ class SellerProfileTabPage extends ConsumerWidget {
                       ),
                       child: Row(
                         children: [
-                          CompanyLogo(name: seller.companyName, size: 56),
+                          CompanyLogo(name: seller.companyName, size: 56, logoUrl: seller.logoUrl),
                           const SizedBox(width: AppDimensions.space14),
                           Expanded(
                             child: Column(

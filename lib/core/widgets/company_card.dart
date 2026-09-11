@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../app/theme/colors.dart';
@@ -250,11 +251,15 @@ class _MetricDivider extends StatelessWidget {
 /// Monogram logo tile — a stable stand-in until real company logos exist,
 /// tinted deterministically from the name so each brand keeps its colour.
 class CompanyLogo extends StatelessWidget {
-  const CompanyLogo({super.key, required this.name, this.size = 44, this.radius});
+  const CompanyLogo({super.key, required this.name, this.size = 44, this.radius, this.logoUrl});
 
   final String name;
   final double size;
   final double? radius;
+
+  /// Real logo (Supabase Storage `company-logos` bucket) — falls back to
+  /// the gradient-initials avatar below when null or still loading.
+  final String? logoUrl;
 
   static const List<List<Color>> _ramps = [
     [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
@@ -275,7 +280,7 @@ class CompanyLogo extends StatelessWidget {
         .map((w) => w.characters.first.toUpperCase())
         .join();
 
-    return Container(
+    final fallback = Container(
       width: size,
       height: size,
       alignment: Alignment.center,
@@ -301,6 +306,20 @@ class CompanyLogo extends StatelessWidget {
           fontSize: size * 0.36,
           fontWeight: FontWeight.w800,
         ),
+      ),
+    );
+
+    if (logoUrl == null) return fallback;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius ?? size * 0.32),
+      child: CachedNetworkImage(
+        imageUrl: logoUrl!,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        placeholder: (_, __) => fallback,
+        errorWidget: (_, __, ___) => fallback,
       ),
     );
   }

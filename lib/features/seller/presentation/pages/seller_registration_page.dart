@@ -8,6 +8,7 @@ import '../../../../app/theme/typography.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/utils/input_formatters.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_image_picker_field.dart';
 import '../../../../core/widgets/app_nav_bar.dart';
 import '../../../../core/widgets/app_select_field.dart';
 import '../../../../core/widgets/app_surface.dart';
@@ -36,6 +37,7 @@ class _SellerRegistrationPageState extends ConsumerState<SellerRegistrationPage>
 
   ServiceCategory _category = ServiceCategory.gazBallon;
   String _workingHours = '09:00 - 21:00';
+  String? _logoUrl;
   bool _offersDelivery = true;
   bool _offersPickup = true;
   bool _submitting = false;
@@ -108,6 +110,7 @@ class _SellerRegistrationPageState extends ConsumerState<SellerRegistrationPage>
           deliveryFee: _offersDelivery ? deliveryFee : 0,
           offersDelivery: _offersDelivery,
           offersPickup: _offersPickup,
+          logoUrl: _logoUrl,
         );
 
     ref.read(authProvider.notifier).linkSeller(profile.id);
@@ -120,6 +123,7 @@ class _SellerRegistrationPageState extends ConsumerState<SellerRegistrationPage>
   @override
   Widget build(BuildContext context) {
     final c = context.palette;
+    final userId = ref.watch(authProvider)?.id;
 
     return Scaffold(
       body: CustomScrollView(
@@ -141,6 +145,28 @@ class _SellerRegistrationPageState extends ConsumerState<SellerRegistrationPage>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: AppDimensions.space8),
+                        child: AppImagePickerField(
+                          bucket: 'company-logos',
+                          fileNameHint: userId,
+                          initialUrl: _logoUrl,
+                          size: 96,
+                          placeholderIcon: Icons.storefront_outlined,
+                          onUploaded: (url) => setState(() => _logoUrl = url),
+                        ),
+                      ),
+                    ),
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: AppDimensions.space20),
+                        child: Text(
+                          'Firma logotipi (ixtiyoriy)',
+                          style: AppTypography.caption.copyWith(color: c.textTertiary),
+                        ),
+                      ),
+                    ),
                     AppTextField(
                       controller: _nameController,
                       label: 'Firma nomi',

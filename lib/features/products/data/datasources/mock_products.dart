@@ -7,7 +7,7 @@ final List<Product> mockProducts = [
   const Product(
     id: 'p1',
     name: 'Gaz ballon 50L',
-    imageUrl: 'assets/images/product_gas_50.png',
+    imageUrl: 'https://haurszcvivpqdyenfwbb.supabase.co/storage/v1/object/public/product-images/catalog/gazBallon.jpg',
     price: 120000,
     oldPrice: 135000,
     rating: 4.8,
@@ -30,7 +30,7 @@ final List<Product> mockProducts = [
   const Product(
     id: 'p2',
     name: 'Gaz ballon 25L',
-    imageUrl: 'assets/images/product_gas_25.png',
+    imageUrl: 'https://haurszcvivpqdyenfwbb.supabase.co/storage/v1/object/public/product-images/catalog/gazBallon.jpg',
     price: 76000,
     rating: 4.6,
     reviewCount: 143,
@@ -46,7 +46,7 @@ final List<Product> mockProducts = [
   const Product(
     id: 'p3',
     name: 'Propan ballon 27L',
-    imageUrl: 'assets/images/product_propane.png',
+    imageUrl: 'https://haurszcvivpqdyenfwbb.supabase.co/storage/v1/object/public/product-images/catalog/propanGaz.jpg',
     price: 62000,
     rating: 4.3,
     reviewCount: 58,
@@ -60,7 +60,7 @@ final List<Product> mockProducts = [
   const Product(
     id: 'p4',
     name: 'Metan gaz (CNG)',
-    imageUrl: 'assets/images/product_methane.png',
+    imageUrl: 'https://haurszcvivpqdyenfwbb.supabase.co/storage/v1/object/public/product-images/catalog/metanGaz.jpg',
     price: 45000,
     rating: 4.5,
     reviewCount: 89,
@@ -75,7 +75,7 @@ final List<Product> mockProducts = [
   const Product(
     id: 'p5',
     name: 'Suyultirilgan gaz',
-    imageUrl: 'assets/images/product_liquid.png',
+    imageUrl: 'https://haurszcvivpqdyenfwbb.supabase.co/storage/v1/object/public/product-images/catalog/suyultirilganGaz.jpg',
     price: 133000,
     oldPrice: 149000,
     rating: 4.9,
@@ -93,7 +93,7 @@ final List<Product> mockProducts = [
   const Product(
     id: 'p6',
     name: 'Elektr quvvatlash — 60 kVt',
-    imageUrl: 'assets/images/product_ev.png',
+    imageUrl: 'https://haurszcvivpqdyenfwbb.supabase.co/storage/v1/object/public/product-images/catalog/elektrQuvvatlash.jpg',
     price: 1200,
     rating: 4.7,
     reviewCount: 126,
@@ -108,7 +108,7 @@ final List<Product> mockProducts = [
   const Product(
     id: 'p7',
     name: 'Benzin AI-95',
-    imageUrl: 'assets/images/product_ai95.png',
+    imageUrl: 'https://haurszcvivpqdyenfwbb.supabase.co/storage/v1/object/public/product-images/catalog/benzin.jpg',
     price: 12500,
     rating: 4.6,
     reviewCount: 412,
@@ -124,7 +124,7 @@ final List<Product> mockProducts = [
   const Product(
     id: 'p8',
     name: 'Benzin AI-92',
-    imageUrl: 'assets/images/product_ai92.png',
+    imageUrl: 'https://haurszcvivpqdyenfwbb.supabase.co/storage/v1/object/public/product-images/catalog/benzin.jpg',
     price: 11200,
     rating: 4.4,
     reviewCount: 268,
@@ -139,7 +139,7 @@ final List<Product> mockProducts = [
   const Product(
     id: 'p9',
     name: 'Dizel Yevro-5',
-    imageUrl: 'assets/images/product_diesel.png',
+    imageUrl: 'https://haurszcvivpqdyenfwbb.supabase.co/storage/v1/object/public/product-images/catalog/dizel.jpg',
     price: 13800,
     rating: 4.5,
     reviewCount: 174,
@@ -154,7 +154,7 @@ final List<Product> mockProducts = [
   const Product(
     id: 'p10',
     name: 'Motor moyi 4L',
-    imageUrl: 'assets/images/product_oil.png',
+    imageUrl: 'https://haurszcvivpqdyenfwbb.supabase.co/storage/v1/object/public/product-images/catalog/market.jpg',
     price: 285000,
     oldPrice: 320000,
     rating: 4.7,
@@ -169,7 +169,7 @@ final List<Product> mockProducts = [
   const Product(
     id: 'p11',
     name: 'Gaz reduktori',
-    imageUrl: 'assets/images/product_regulator.png',
+    imageUrl: 'https://haurszcvivpqdyenfwbb.supabase.co/storage/v1/object/public/product-images/catalog/market.jpg',
     price: 95000,
     rating: 4.2,
     reviewCount: 41,
@@ -183,7 +183,7 @@ final List<Product> mockProducts = [
   const Product(
     id: 'p12',
     name: 'Propan ballon 12L',
-    imageUrl: 'assets/images/product_propane_12.png',
+    imageUrl: 'https://haurszcvivpqdyenfwbb.supabase.co/storage/v1/object/public/product-images/catalog/propanGaz.jpg',
     price: 38000,
     rating: 4.1,
     reviewCount: 27,

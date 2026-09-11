@@ -8,6 +8,7 @@ import '../../../../app/theme/theme_provider.dart';
 import '../../../../app/theme/typography.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/widgets/app_image_picker_field.dart';
 import '../../../../core/widgets/app_nav_bar.dart';
 import '../../../../core/widgets/app_surface.dart';
 import '../../../../core/widgets/app_tappable.dart';
@@ -72,6 +73,10 @@ class ProfilePage extends ConsumerWidget {
                   _ProfileHeader(
                     name: user?.fullName ?? 'Mehmon foydalanuvchi',
                     phone: AppFormatters.phone(user?.phone ?? '+998901234567'),
+                    userId: user?.id,
+                    photoUrl: user?.photoUrl,
+                    onPhotoUploaded: (url) =>
+                        ref.read(authProvider.notifier).updatePhotoUrl(url),
                     onEdit: () => AppToast.show(
                       context,
                       'Profilni tahrirlash tez orada',
@@ -253,11 +258,17 @@ class _ProfileHeader extends StatelessWidget {
     required this.name,
     required this.phone,
     required this.onEdit,
+    this.userId,
+    this.photoUrl,
+    this.onPhotoUploaded,
   });
 
   final String name;
   final String phone;
   final VoidCallback onEdit;
+  final String? userId;
+  final String? photoUrl;
+  final ValueChanged<String>? onPhotoUploaded;
 
   @override
   Widget build(BuildContext context) {
@@ -284,19 +295,19 @@ class _ProfileHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: AppDimensions.avatarSizeLarge,
-            height: AppDimensions.avatarSizeLarge,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 2),
-            ),
-            child: Text(
+          AppImagePickerField(
+            bucket: 'avatars',
+            fileNameHint: userId,
+            initialUrl: photoUrl,
+            size: AppDimensions.avatarSizeLarge,
+            shape: BoxShape.circle,
+            backgroundColor: Colors.white.withValues(alpha: 0.2),
+            borderColor: Colors.white.withValues(alpha: 0.35),
+            placeholder: Text(
               initials,
               style: AppTypography.title2.copyWith(color: Colors.white),
             ),
+            onUploaded: (url) => onPhotoUploaded?.call(url),
           ),
           const SizedBox(width: AppDimensions.space14),
           Expanded(

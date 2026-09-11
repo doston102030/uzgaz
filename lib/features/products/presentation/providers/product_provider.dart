@@ -1,10 +1,24 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
-import '../../data/datasources/mock_products.dart';
+import '../../data/datasources/supabase_products_datasource.dart';
 import '../../domain/entities/product.dart';
 
-final productsProvider = Provider<List<Product>>((ref) => mockProducts);
+/// Fetches the catalogue once per app session from Supabase
+/// (`products` table). `ref.watch` this directly to show a loading /
+/// error state; everything else in the app reads [productsProvider]
+/// below, which just unwraps the resolved list.
+final productsFutureProvider = FutureProvider<List<Product>>((ref) {
+  return fetchProducts();
+});
+
+/// Synchronous view of the catalogue — empty until the Supabase fetch
+/// resolves, then live. Every existing screen/provider watches this, so
+/// switching the fetch itself from mock to Supabase needed no other
+/// file to change.
+final productsProvider = Provider<List<Product>>((ref) {
+  return ref.watch(productsFutureProvider).valueOrNull ?? const [];
+});
 
 final productByIdProvider = Provider.family<Product?, String>((ref, id) {
   final products = ref.watch(productsProvider);

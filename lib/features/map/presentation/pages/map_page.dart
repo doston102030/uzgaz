@@ -15,6 +15,8 @@ import '../../../../core/widgets/app_tappable.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/custom_dialog.dart';
 import '../../../../core/widgets/map_company_card.dart';
+import '../../../../core/widgets/pulsing_marker.dart';
+import '../../../../core/utils/dash_path.dart';
 import '../../../checkout/presentation/providers/checkout_provider.dart';
 import '../../../companies/domain/entities/company.dart';
 import '../../../companies/presentation/providers/company_provider.dart';
@@ -121,6 +123,8 @@ class _MapPageState extends ConsumerState<MapPage> {
             bottom: 236 + MediaQuery.paddingOf(context).bottom,
             child: Column(
               children: [
+                const _CompassBadge(),
+                const SizedBox(height: AppDimensions.space10),
                 AppIconButton(
                   icon: Icons.layers_outlined,
                   size: 44,
@@ -139,6 +143,15 @@ class _MapPageState extends ConsumerState<MapPage> {
                 ),
               ],
             ),
+          ),
+
+          // Scale indicator, bottom-left — the other half of the standard
+          // map-chrome pair with the compass. Sits above the "nearby
+          // branches" pill so the two floating layers never collide.
+          Positioned(
+            left: AppDimensions.gutter,
+            bottom: 336 + MediaQuery.paddingOf(context).bottom,
+            child: const _ScaleBar(),
           ),
 
           // Bottom: pickup hint + company carousel.
@@ -265,8 +278,15 @@ class _MapCanvas extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.palette;
 
-    final lats = companies.map((e) => e.latitude).toList();
-    final lngs = companies.map((e) => e.longitude).toList();
+    // Companies load asynchronously now (Supabase), so this can briefly
+    // be empty right after launch — fall back to centering on Tashkent
+    // instead of `reduce`-ing an empty list.
+    final lats = companies.isEmpty
+        ? [AppConstants.defaultLat]
+        : companies.map((e) => e.latitude).toList();
+    final lngs = companies.isEmpty
+        ? [AppConstants.defaultLng]
+        : companies.map((e) => e.longitude).toList();
     final minLat = lats.reduce(math.min) - 0.012;
     final maxLat = lats.reduce(math.max) + 0.012;
     final minLng = lngs.reduce(math.min) - 0.012;
@@ -297,6 +317,8 @@ class _MapCanvas extends StatelessWidget {
                   block: c.isDark ? const Color(0xFF141D2B) : const Color(0xFFE4EAF2),
                   road: c.isDark ? const Color(0xFF1F2A3B) : Colors.white,
                   park: c.isDark ? const Color(0xFF15291F) : const Color(0xFFDDEEDF),
+                  highway: c.isDark ? const Color(0xFF6B4A1F) : const Color(0xFFF6C567),
+                  isDark: c.isDark,
                 ),
               ),
             ),
@@ -322,7 +344,24 @@ class _MapCanvas extends StatelessWidget {
             Positioned(
               left: userPoint.dx - 16,
               top: userPoint.dy - 16,
-              child: _UserDot(color: c.primary),
+              child: PulsingMarker(
+                color: c.primary,
+                child: Container(
+                  width: 15,
+                  height: 15,
+                  decoration: BoxDecoration(
+                    color: c.primary,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: c.primary.withValues(alpha: 0.5),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
 
             for (int i = 0; i < companies.length; i++)
@@ -447,63 +486,112 @@ class _PinTailPainter extends CustomPainter {
   bool shouldRepaint(covariant _PinTailPainter old) => old.color != color;
 }
 
-class _UserDot extends StatefulWidget {
-  const _UserDot({required this.color});
-
-  final Color color;
-
-  @override
-  State<_UserDot> createState() => _UserDotState();
-}
-
-class _UserDotState extends State<_UserDot> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2000),
-  )..repeat();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+/// Floating "N" badge — the other half of standard map chrome, paired
+/// with [_ScaleBar]. Purely decorative for now; wire to the compass
+/// sensor once heading tracking lands.
+class _CompassBadge extends StatelessWidget {
+  const _CompassBadge();
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 32,
-      height: 32,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) => Stack(
-          alignment: Alignment.center,
-          children: [
-            Container(
-              width: 10 + 22 * _controller.value,
-              height: 10 + 22 * _controller.value,
-              decoration: BoxDecoration(
-                color: widget.color
-                    .withValues(alpha: 0.22 * (1 - _controller.value)),
-                shape: BoxShape.circle,
-              ),
+    final c = context.palette;
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: c.surface,
+        shape: BoxShape.circle,
+        border: Border.all(color: c.border),
+        boxShadow: c.shadowSm,
+      ),
+      child: CustomPaint(
+        painter: _CompassNeedlePainter(north: c.danger, south: c.textTertiary),
+      ),
+    );
+  }
+}
+
+class _CompassNeedlePainter extends CustomPainter {
+  _CompassNeedlePainter({required this.north, required this.south});
+
+  final Color north;
+  final Color south;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final r = size.width * 0.3;
+
+    final path = Path()
+      ..moveTo(center.dx, center.dy - r)
+      ..lineTo(center.dx + r * 0.42, center.dy)
+      ..lineTo(center.dx, center.dy + r)
+      ..lineTo(center.dx - r * 0.42, center.dy)
+      ..close();
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(center.dx, center.dy - r)
+        ..lineTo(center.dx + r * 0.42, center.dy)
+        ..lineTo(center.dx, center.dy)
+        ..close(),
+      Paint()..color = north,
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(center.dx, center.dy)
+        ..lineTo(center.dx + r * 0.42, center.dy)
+        ..lineTo(center.dx, center.dy + r)
+        ..lineTo(center.dx - r * 0.42, center.dy)
+        ..close(),
+      Paint()..color = south,
+    );
+    canvas.drawPath(
+      path,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..color = Colors.black.withValues(alpha: 0.08),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _CompassNeedlePainter old) => false;
+}
+
+/// "500 m" ruler — grounds the illustrated canvas as a map rather than a
+/// decorative pattern, the way every real map app anchors its chrome.
+class _ScaleBar extends StatelessWidget {
+  const _ScaleBar();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.palette;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: c.surface.withValues(alpha: 0.92),
+        borderRadius: AppDimensions.brPill,
+        border: Border.all(color: c.border),
+        boxShadow: c.shadowSm,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 46,
+            height: 2,
+            color: c.textSecondary,
+          ),
+          const SizedBox(height: 3),
+          Text(
+            '500 m',
+            style: AppTypography.caption2.copyWith(
+              color: c.textSecondary,
+              fontWeight: FontWeight.w600,
             ),
-            Container(
-              width: 15,
-              height: 15,
-              decoration: BoxDecoration(
-                color: widget.color,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 3),
-                boxShadow: [
-                  BoxShadow(
-                    color: widget.color.withValues(alpha: 0.5),
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -549,8 +637,10 @@ class _RouteLinePainter extends CustomPainter {
       old.from != from || old.to != to || old.color != color;
 }
 
-/// Draws a plausible city: blocks, arterial roads, a river and a park —
-/// readable at a glance, never competing with the cards on top.
+/// Draws a plausible city: shaded blocks, a highway, local streets, a
+/// river and a park — readable at a glance, never competing with the
+/// cards on top, but textured enough to read as a *map* rather than a
+/// tiled pattern.
 class _StreetPainter extends CustomPainter {
   _StreetPainter({
     required this.water,
@@ -558,6 +648,8 @@ class _StreetPainter extends CustomPainter {
     required this.block,
     required this.road,
     required this.park,
+    required this.highway,
+    required this.isDark,
   });
 
   final Color water;
@@ -565,40 +657,75 @@ class _StreetPainter extends CustomPainter {
   final Color block;
   final Color road;
   final Color park;
+  final Color highway;
+  final bool isDark;
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(Offset.zero & size, Paint()..color = land);
+    // Land: a faint gradient reads as ambient light rather than a flat fill.
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [land, Color.lerp(land, block, 0.25)!],
+        ).createShader(Offset.zero & size),
+    );
 
     final random = math.Random(7);
-    final blockPaint = Paint()..color = block;
+    final shadowColor = Colors.black.withValues(alpha: isDark ? 0.35 : 0.08);
+    final shadowPaint = Paint()
+      ..color = shadowColor
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+    final shades = [
+      block,
+      Color.lerp(block, land, 0.35)!,
+      Color.lerp(block, road, 0.2)!,
+    ];
 
-    // City blocks on a loose grid.
+    // City blocks: varied shade + soft drop shadow for a touch of depth.
     for (double y = -20; y < size.height + 40; y += 74) {
       for (double x = -20; x < size.width + 40; x += 88) {
         final w = 52 + random.nextDouble() * 26;
         final h = 40 + random.nextDouble() * 22;
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(x + random.nextDouble() * 8, y + random.nextDouble() * 8, w, h),
-            const Radius.circular(5),
-          ),
-          blockPaint,
+        final rect = Rect.fromLTWH(
+          x + random.nextDouble() * 8,
+          y + random.nextDouble() * 8,
+          w,
+          h,
         );
+        final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(5));
+        canvas.drawRRect(rrect.shift(const Offset(0, 2)), shadowPaint);
+        canvas.drawRRect(rrect, Paint()..color = shades[random.nextInt(shades.length)]);
       }
     }
 
-    // Park.
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(size.width * 0.06, size.height * 0.52, size.width * 0.3,
-            size.height * 0.16),
-        const Radius.circular(20),
-      ),
-      Paint()..color = park,
+    // Park, with a scatter of tree dots instead of a flat fill.
+    final parkRect = Rect.fromLTWH(
+      size.width * 0.06,
+      size.height * 0.52,
+      size.width * 0.3,
+      size.height * 0.16,
     );
+    final parkRRect = RRect.fromRectAndRadius(parkRect, const Radius.circular(20));
+    canvas.drawRRect(parkRRect.shift(const Offset(0, 2)), shadowPaint);
+    canvas.drawRRect(parkRRect, Paint()..color = park);
+    canvas.save();
+    canvas.clipRRect(parkRRect);
+    final treeColor = Color.lerp(park, Colors.black, 0.18)!;
+    for (double y = parkRect.top + 6; y < parkRect.bottom; y += 13) {
+      for (double x = parkRect.left + 6; x < parkRect.right; x += 15) {
+        canvas.drawCircle(
+          Offset(x + random.nextDouble() * 4, y + random.nextDouble() * 4),
+          2.2,
+          Paint()..color = treeColor.withValues(alpha: 0.55),
+        );
+      }
+    }
+    canvas.restore();
 
-    // River.
+    // River: two-tone gradient stroke plus a lighter shoreline highlight.
     final river = Path()
       ..moveTo(-20, size.height * 0.24)
       ..cubicTo(
@@ -617,30 +744,75 @@ class _StreetPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 26
         ..strokeCap = StrokeCap.round
-        ..color = water,
+        ..shader = LinearGradient(
+          colors: [water, Color.lerp(water, Colors.black, 0.15)!],
+        ).createShader(river.getBounds()),
+    );
+    canvas.drawPath(
+      river,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3
+        ..strokeCap = StrokeCap.round
+        ..color = Colors.white.withValues(alpha: isDark ? 0.08 : 0.35),
     );
 
-    // Roads.
+    // Local streets.
     final roadPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..color = road;
 
     for (double y = 18; y < size.height; y += 74) {
-      roadPaint.strokeWidth = y % 148 < 74 ? 9 : 5;
+      roadPaint.strokeWidth = y % 148 < 74 ? 8 : 4;
       canvas.drawLine(Offset(-20, y), Offset(size.width + 20, y), roadPaint);
     }
     for (double x = 26; x < size.width; x += 88) {
-      roadPaint.strokeWidth = x % 176 < 88 ? 9 : 5;
+      roadPaint.strokeWidth = x % 176 < 88 ? 8 : 4;
       canvas.drawLine(Offset(x, -20), Offset(x, size.height + 20), roadPaint);
     }
 
-    // A diagonal avenue to break the grid.
-    roadPaint.strokeWidth = 11;
-    canvas.drawLine(
-      Offset(-20, size.height * 0.86),
-      Offset(size.width + 20, size.height * 0.34),
-      roadPaint,
+    // Highway: a diagonal avenue in a distinct tone, with a dashed
+    // centerline — the single strongest cue that this is a map, not a
+    // pattern.
+    final highwayPath = Path()
+      ..moveTo(-20, size.height * 0.86)
+      ..lineTo(size.width + 20, size.height * 0.34);
+    canvas.drawPath(
+      highwayPath,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 15
+        ..strokeCap = StrokeCap.round
+        ..color = shadowColor,
+    );
+    canvas.drawPath(
+      highwayPath.shift(const Offset(0, -3)),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 13
+        ..strokeCap = StrokeCap.round
+        ..color = highway,
+    );
+    canvas.drawPath(
+      dashPath(highwayPath.shift(const Offset(0, -3)), dashLength: 14, gapLength: 10),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..color = Colors.white.withValues(alpha: 0.8),
+    );
+
+    // Vignette: darkens the corners a touch so the cards on top feel
+    // anchored to something with depth, not a flat sticker.
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()
+        ..shader = RadialGradient(
+          center: Alignment.center,
+          radius: 1.1,
+          colors: [Colors.transparent, Colors.black.withValues(alpha: isDark ? 0.28 : 0.06)],
+          stops: const [0.6, 1.0],
+        ).createShader(Offset.zero & size),
     );
   }
 

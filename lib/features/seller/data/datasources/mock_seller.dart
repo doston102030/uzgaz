@@ -4,6 +4,9 @@ import '../../domain/entities/seller_order.dart';
 import '../../domain/entities/seller_product.dart';
 import '../../domain/entities/seller_profile.dart';
 
+const _catalogBase =
+    'https://haurszcvivpqdyenfwbb.supabase.co/storage/v1/object/public/product-images/catalog';
+
 /// One already-approved demo seller ("UzGaz Servis", owned by the mock
 /// buyer u1) so the seller shell has real data to show the moment the
 /// role is switched, without requiring the registration flow first.
@@ -37,6 +40,7 @@ final List<SellerProduct> mockSellerProducts = [
     stockQty: 34,
     moderationStatus: ProductModerationStatus.approved,
     createdAt: DateTime.now().subtract(const Duration(days: 38)),
+    imageUrl: '$_catalogBase/gazBallon.jpg',
   ),
   SellerProduct(
     id: 'sp2',
@@ -48,6 +52,7 @@ final List<SellerProduct> mockSellerProducts = [
     stockQty: 18,
     moderationStatus: ProductModerationStatus.approved,
     createdAt: DateTime.now().subtract(const Duration(days: 30)),
+    imageUrl: '$_catalogBase/gazBallon.jpg',
   ),
   SellerProduct(
     id: 'sp3',
@@ -59,6 +64,7 @@ final List<SellerProduct> mockSellerProducts = [
     stockQty: 12,
     moderationStatus: ProductModerationStatus.pending,
     createdAt: DateTime.now().subtract(const Duration(hours: 6)),
+    imageUrl: '$_catalogBase/market.jpg',
   ),
   SellerProduct(
     id: 'sp4',
@@ -71,6 +77,7 @@ final List<SellerProduct> mockSellerProducts = [
     moderationStatus: ProductModerationStatus.rejected,
     rejectionReason: 'Mahsulot rasmiga texnik xavfsizlik sertifikati biriktirilmagan.',
     createdAt: DateTime.now().subtract(const Duration(days: 2)),
+    imageUrl: '$_catalogBase/metanGaz.jpg',
   ),
 ];
 

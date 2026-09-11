@@ -63,6 +63,10 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     final category = ref.watch(categoryFilterProvider);
     final counts = ref.watch(categoryCountsProvider);
     final sort = ref.watch(productSortProvider);
+    // Products load from Supabase now — an empty list right after launch
+    // means "still loading", not "no results", so don't show the
+    // no-matches empty state (with its "clear filters" action) for that.
+    final catalogueLoading = ref.watch(productsFutureProvider).isLoading;
 
     return Scaffold(
       body: CustomScrollView(
@@ -176,7 +180,12 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               ),
             ),
           ),
-          if (products.isEmpty)
+          if (products.isEmpty && catalogueLoading)
+            const SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (products.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
               child: EmptyState(

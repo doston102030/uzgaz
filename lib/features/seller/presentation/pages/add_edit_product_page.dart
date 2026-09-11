@@ -8,11 +8,11 @@ import '../../../../app/theme/typography.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/utils/input_formatters.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_image_picker_field.dart';
 import '../../../../core/widgets/app_nav_bar.dart';
 import '../../../../core/widgets/app_select_field.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/custom_dialog.dart';
-import '../../../../core/widgets/product_illustration.dart';
 import '../providers/seller_provider.dart';
 
 /// Add / edit form. Editing an approved product resets it back to
@@ -39,6 +39,7 @@ class _AddEditProductPageState extends ConsumerState<AddEditProductPage> {
 
   ServiceCategory _category = ServiceCategory.gazBallon;
   String _unit = 'dona';
+  String? _imageUrl;
   bool _loaded = false;
   bool _submitting = false;
 
@@ -63,6 +64,7 @@ class _AddEditProductPageState extends ConsumerState<AddEditProductPage> {
       _stockController.text = product.stockQty.toString();
       _category = product.category;
       _unit = product.unit;
+      _imageUrl = product.imageUrl;
     }
     _loaded = true;
   }
@@ -126,6 +128,7 @@ class _AddEditProductPageState extends ConsumerState<AddEditProductPage> {
                 oldPrice: oldPriceText.isEmpty ? null : int.parse(oldPriceText),
                 stockQty: stock,
                 unit: _unit,
+                imageUrl: _imageUrl,
               ),
             );
       }
@@ -139,6 +142,7 @@ class _AddEditProductPageState extends ConsumerState<AddEditProductPage> {
             oldPrice: oldPriceText.isEmpty ? null : int.parse(oldPriceText),
             stockQty: stock,
             unit: _unit,
+            imageUrl: _imageUrl,
           );
     }
 
@@ -157,7 +161,7 @@ class _AddEditProductPageState extends ConsumerState<AddEditProductPage> {
   @override
   Widget build(BuildContext context) {
     final c = context.palette;
-    final visual = EnergyVisualX.fromCategory(_category.id, name: _nameController.text);
+    final sellerId = ref.watch(currentSellerProvider)?.id;
 
     return Scaffold(
       body: CustomScrollView(
@@ -180,16 +184,17 @@ class _AddEditProductPageState extends ConsumerState<AddEditProductPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Center(
-                      child: Container(
-                        width: 120,
-                        height: 120,
-                        margin: const EdgeInsets.only(bottom: AppDimensions.space20),
-                        decoration: BoxDecoration(
-                          color: c.surfaceMuted,
-                          borderRadius: AppDimensions.brLarge,
-                          border: Border.all(color: c.border),
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: AppDimensions.space20),
+                        child: AppImagePickerField(
+                          bucket: 'product-images',
+                          folder: sellerId,
+                          fileNameHint: widget.productId,
+                          initialUrl: _imageUrl,
+                          size: 120,
+                          placeholderIcon: Icons.add_photo_alternate_outlined,
+                          onUploaded: (url) => setState(() => _imageUrl = url),
                         ),
-                        child: ProductIllustration(visual: visual, showStage: false),
                       ),
                     ),
                     AppTextField(

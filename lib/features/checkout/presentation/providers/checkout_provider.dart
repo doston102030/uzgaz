@@ -15,11 +15,32 @@ final effectiveCompanyProvider = Provider<Company>((ref) {
   final selected = ref.watch(selectedCompanyProvider);
   if (selected != null) return selected;
   final companies = ref.watch(sortedCompaniesProvider);
+  if (companies.isEmpty) return _noCompanyFallback;
   return companies.firstWhere(
     (c) => c.isAvailable,
     orElse: () => companies.first,
   );
 });
+
+/// Shown for the brief window before the catalogue has finished loading
+/// from Supabase (or if the fetch fails) — keeps checkout from crashing
+/// instead of assuming a company is always present, which stopped being
+/// guaranteed once the catalogue became an async fetch.
+const _noCompanyFallback = Company(
+  id: '',
+  name: 'Kompaniya tanlanmoqda…',
+  logoUrl: '',
+  rating: 0,
+  reviewCount: 0,
+  distanceKm: 0,
+  productPrice: 0,
+  deliveryFee: 0,
+  etaMinutes: 0,
+  workingHours: '',
+  isAvailable: false,
+  latitude: 0,
+  longitude: 0,
+);
 
 final deliveryMethodProvider =
     StateProvider<DeliveryMethod>((ref) => DeliveryMethod.delivery);

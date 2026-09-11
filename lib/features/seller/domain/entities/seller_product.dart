@@ -19,6 +19,7 @@ class SellerProduct extends Equatable {
     this.unit = 'dona',
     this.oldPrice,
     this.rejectionReason,
+    this.imageUrl,
   });
 
   final String id;
@@ -34,6 +35,10 @@ class SellerProduct extends Equatable {
   final int? oldPrice;
   final String? rejectionReason;
 
+  /// Public Supabase Storage URL of the product photo (`product-images`
+  /// bucket) — null until the seller uploads one.
+  final String? imageUrl;
+
   bool get isInStock => stockQty > 0;
   bool get isLive => moderationStatus == ProductModerationStatus.approved && isInStock;
 
@@ -47,6 +52,7 @@ class SellerProduct extends Equatable {
     String? unit,
     int? oldPrice,
     String? rejectionReason,
+    String? imageUrl,
   }) =>
       SellerProduct(
         id: id,
@@ -61,6 +67,7 @@ class SellerProduct extends Equatable {
         unit: unit ?? this.unit,
         oldPrice: oldPrice ?? this.oldPrice,
         rejectionReason: rejectionReason ?? this.rejectionReason,
+        imageUrl: imageUrl ?? this.imageUrl,
       );
 
   @override
