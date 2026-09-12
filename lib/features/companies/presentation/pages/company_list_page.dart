@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -46,6 +47,17 @@ class CompanyListPage extends ConsumerWidget {
             subtitle: productName == null
                 ? '${companies.length} ta taklif solishtirilmoqda'
                 : '$productName uchun ${companies.length} ta taklif',
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppDimensions.gutter,
+                AppDimensions.space8,
+                AppDimensions.gutter,
+                AppDimensions.space4,
+              ),
+              child: _CompaniesHeaderBanner(count: companies.length),
+            ),
           ),
           SliverPinnedBar(
             height: AppDimensions.chipHeight + 14,
@@ -153,6 +165,75 @@ class CompanyListPage extends ConsumerWidget {
                 ),
               ),
             ),
+    );
+  }
+}
+
+/// "🏢 gaz bilan ishlaydigan kompaniyalar" — a real-photo header so this
+/// reads as a B2B directory of licensed energy enterprises, not a plain
+/// list. Photo credit: `ASSETS_ATTRIBUTION.md`.
+class _CompaniesHeaderBanner extends StatelessWidget {
+  const _CompaniesHeaderBanner({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.palette;
+    return ClipRRect(
+      borderRadius: AppDimensions.brXLarge,
+      child: SizedBox(
+        height: 112,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            CachedNetworkImage(
+              imageUrl:
+                  'https://haurszcvivpqdyenfwbb.supabase.co/storage/v1/object/public/product-images/categories/companies-header.jpg',
+              fit: BoxFit.cover,
+              placeholder: (_, __) => Container(color: c.surfaceMuted),
+              errorWidget: (_, __, ___) => Container(color: c.surfaceMuted),
+            ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.15),
+                    Colors.black.withValues(alpha: 0.72),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(AppDimensions.space16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    'Andijon gaz va energiya korxonalari',
+                    style: AppTypography.headline.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$count ta sertifikatlangan hamkor · litsenziyalangan yetkazib beruvchilar',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.caption.copyWith(
+                      color: Colors.white.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

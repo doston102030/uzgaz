@@ -12,8 +12,9 @@ flutter pub get
 flutter run
 ```
 
-Google Maps, Firebase yoki to'lov provayderi kalitlari hozircha kerak emas —
-ilova to'liq mock data bilan ishlaydi (Map ekrani placeholder ko'rinishda).
+Firebase, xarita yoki to'lov provayderi kalitlari hozircha kerak emas —
+ilova to'liq mock data bilan ishlaydi (Map ekrani chizilgan stand-in
+ko'rinishda; pastdagi "Xarita" bo'limiga qarang).
 
 ## Nima tayyor (ushbu yetkazishda)
 
@@ -47,9 +48,15 @@ holatda):
 1. **Firebase** (Auth, Firestore, Storage, FCM) — hozir `AuthNotifier` va
    barcha repositorylar mock. `firebase_options.dart` generatsiya qilib,
    `main.dart`dagi izohlarni oching.
-2. **Google Maps** — `MapPage`dagi `_MapPlaceholder`ni haqiqiy
-   `GoogleMap(...)` widgetiga almashtiring, Android/iOS uchun API key
-   qo'shing.
+2. **Xarita** — `MapPage`dagi `_MapCanvas`ni haqiqiy xarita provayderiga
+   almashtiring. Yandex MapKit (`yandex_maps_mapkit_lite`) sinab ko'rildi —
+   Dart tomoni ishladi, lekin bu Flutter versiyasi (3.44.8) bilan paketning
+   Android compileSdk talabi o'rtasida Gradle darajasida ziddiyat chiqdi
+   (`flutter_plugin_android_lifecycle` 36+ talab qiladi, plugin 35 bilan
+   build qilingan). Keyingi urinishda avval `flutter upgrade` qilib ko'ring
+   — odatda shu turdagi mos kelmaslikni yangi Flutter versiyasi hal qiladi.
+   "Mening joylashuvim" tugmasi allaqachon haqiqiy GPS bilan ishlaydi
+   (`geolocator`, web'da ham) — shuni asos qilib xaritani ulash mumkin.
 3. **To'lov provayderi** — `PaymentPage` hozir faqat UI; Payme/Click/Uzcard
    SDK integratsiyasi va tokenizatsiya kerak (xom karta raqami/CVV HECH
    QACHON saqlanmasligi kerak — bu talab kod komментарийларида

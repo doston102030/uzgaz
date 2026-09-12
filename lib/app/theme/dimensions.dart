@@ -66,4 +66,15 @@ class AppDimensions {
 
   /// Extra bottom padding so content clears the floating tab bar.
   static const double bottomBarClearance = 96;
+
+  // ── Responsive (desktop/web) ───────────────────────────────────────
+  /// Above this window width, [ResponsiveFrame] stops stretching the
+  /// mobile-designed shell full-bleed and clamps it to [maxContentWidth]
+  /// instead — this app has no separate desktop layout, so a wide
+  /// browser/window tab otherwise reads as a stretched phone screen.
+  static const double breakpointDesktop = 900;
+
+  /// The column width the app is designed at; also this app's largest
+  /// phone target (a big-screen phone in landscape stays full-bleed).
+  static const double maxContentWidth = 480;
 }

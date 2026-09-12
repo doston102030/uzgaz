@@ -21,6 +21,7 @@ class AppColors {
   static const Color energyMint = Color(0xFF10B981); // metan
   static const Color energySlate = Color(0xFF475569); // dizel
   static const Color energyRose = Color(0xFFE11D48); // market / aksiya
+  static const Color energyGreen = Color(0xFF22C55E); // suyultirilgan gaz — aholi subsidiyasi
 
   // ── Status ─────────────────────────────────────────────────────────
   static const Color success = Color(0xFF16A34A);

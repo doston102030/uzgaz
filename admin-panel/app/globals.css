@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f6f8fc;
+  --surface: #ffffff;
+  --surface-muted: #f1f5f9;
+  --border: #e6eaf2;
+  --foreground: #0b1526;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Brand — mirrors the Flutter buyer app's palette 1:1 so the admin
+     surface reads as the same product, not a bolted-on tool. */
+  --color-brand: #2563eb;
+  --color-brand-dark: #1d4ed8;
+  --color-brand-deep: #1e40af;
+  --color-brand-light: #60a5fa;
+  --color-brand-tint: #eaf1fe;
+
+  --color-success: #16a34a;
+  --color-success-tint: #e7f7ee;
+  --color-warning: #d97706;
+  --color-warning-tint: #fef3e2;
+  --color-danger: #dc2626;
+  --color-danger-tint: #fdecec;
+  --color-info: #0284c7;
+  --color-info-tint: #e4f4fd;
+
+  /* Energy category accents — one per service category, same hues as
+     the mobile app's ServiceCategory colors. */
+  --color-energy-flame: #f97316;
+  --color-energy-electric: #8b5cf6;
+  --color-energy-mint: #10b981;
+  --color-energy-amber: #f59e0b;
+  --color-energy-slate: #475569;
+  --color-energy-green: #22c55e;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #d6ddea;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}

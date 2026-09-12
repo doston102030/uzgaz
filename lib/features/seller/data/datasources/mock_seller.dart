@@ -7,18 +7,18 @@ import '../../domain/entities/seller_profile.dart';
 const _catalogBase =
     'https://haurszcvivpqdyenfwbb.supabase.co/storage/v1/object/public/product-images/catalog';
 
-/// One already-approved demo seller ("UzGaz Servis", owned by the mock
-/// buyer u1) so the seller shell has real data to show the moment the
-/// role is switched, without requiring the registration flow first.
+/// One already-approved demo seller ("Andijon Gaz Ta'minot", owned by the
+/// mock buyer u1) so the seller shell has real data to show the moment
+/// the role is switched, without requiring the registration flow first.
 final List<SellerProfile> mockSellerProfiles = [
   SellerProfile(
     id: 's1',
     ownerUserId: 'u1',
-    companyName: 'UzGaz Servis',
+    companyName: 'Andijon Gaz Ta‘minot',
     category: ServiceCategory.gazBallon,
     description: '50 va 25 litrlik gaz ballonlari, tez yetkazib berish bilan.',
-    address: 'Yunusobod tumani, Amir Temur shoh ko‘chasi 108',
-    phone: '+998712001010',
+    address: 'Andijon shahri, Bobur shoh ko‘chasi 108',
+    phone: '+998742251010',
     workingHours: '08:00 - 22:00',
     deliveryFee: 15000,
     status: SellerStatus.approved,
@@ -93,7 +93,7 @@ final List<SellerOrder> mockSellerOrders = [
     status: SellerOrderStatus.yangi,
     deliveryMethod: DeliveryMethod.delivery,
     placedAt: DateTime.now().subtract(const Duration(minutes: 8)),
-    address: 'Toshkent, Mirzo Ulug‘bek tumani, 12-mavze',
+    address: 'Andijon tumani, 12-mavze',
   ),
   SellerOrder(
     id: 'so2',
@@ -106,7 +106,7 @@ final List<SellerOrder> mockSellerOrders = [
     status: SellerOrderStatus.tayyorlanmoqda,
     deliveryMethod: DeliveryMethod.delivery,
     placedAt: DateTime.now().subtract(const Duration(hours: 1, minutes: 20)),
-    address: 'Toshkent, Chilonzor tumani, 19-kvartal',
+    address: 'Shahrixon tumani, 19-kvartal',
   ),
   SellerOrder(
     id: 'so3',
@@ -131,7 +131,7 @@ final List<SellerOrder> mockSellerOrders = [
     status: SellerOrderStatus.yopildi,
     deliveryMethod: DeliveryMethod.delivery,
     placedAt: DateTime.now().subtract(const Duration(days: 1, hours: 3)),
-    address: 'Toshkent, Yashnobod tumani, 4-uy',
+    address: 'Asaka tumani, 4-uy',
   ),
   SellerOrder(
     id: 'so5',
