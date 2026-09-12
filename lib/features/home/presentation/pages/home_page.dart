@@ -17,6 +17,7 @@ import '../../../../core/widgets/company_card.dart';
 import '../../../../core/widgets/custom_dialog.dart';
 import '../../../../core/widgets/order_status_widget.dart';
 import '../../../../core/widgets/product_card.dart';
+import '../../../../core/widgets/promo_carousel.dart';
 import '../../../../core/widgets/service_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../cart/presentation/providers/cart_provider.dart';
@@ -84,8 +85,56 @@ class HomePage extends ConsumerWidget {
                     AppDimensions.gutter,
                     0,
                   ),
-                  child: HighlightServiceCard(
-                    onTap: () => context.push('/services'),
+                  child: PromoCarousel(
+                    slides: [
+                      PromoSlide(
+                        title: 'SUYULTIRILGAN GAZ',
+                        caption: 'Subsidiya narxida · cheklangan miqdorda',
+                        icon: Icons.local_fire_department_rounded,
+                        photoUrl: ServiceCategory.suyultirilganGaz.photoUrl,
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF34D399), Color(0xFF16A34A), Color(0xFF15803D)],
+                          stops: [0, 0.55, 1],
+                        ),
+                        glowColor: AppColors.energyGreen,
+                        onTap: () {
+                          ref.read(categoryFilterProvider.notifier).state =
+                              ServiceCategory.suyultirilganGaz;
+                          context.go('/catalog');
+                        },
+                      ),
+                      PromoSlide(
+                        overline: 'Tezkor xizmat',
+                        title: 'GAZ BALLON YETKAZISH',
+                        caption: '35 daqiqada eshigingizgacha · barcha hajmlar',
+                        badge: 'Bugun',
+                        icon: Icons.propane_tank_rounded,
+                        photoUrl: ServiceCategory.gazBallon.photoUrl,
+                        onTap: () {
+                          ref.read(categoryFilterProvider.notifier).state =
+                              ServiceCategory.gazBallon;
+                          context.go('/catalog');
+                        },
+                      ),
+                      PromoSlide(
+                        overline: 'Yangi imkoniyat',
+                        title: 'ELEKTR QUVVATLASH',
+                        caption: 'Shahar bo‘ylab tezkor zaryadlash tarmog‘i kengaymoqda',
+                        badge: 'Yangi',
+                        icon: Icons.bolt_rounded,
+                        photoUrl: ServiceCategory.elektrQuvvatlash.photoUrl,
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFFA78BFA), Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+                          stops: [0, 0.55, 1],
+                        ),
+                        glowColor: AppColors.energyElectric,
+                        onTap: () => context.push('/services'),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -263,7 +312,7 @@ class _HomeHeader extends ConsumerWidget {
                               children: [
                                 Flexible(
                                   child: Text(
-                                    'Toshkent, Yunusobod',
+                                    'Andijon, Bog‘ishamol',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: AppTypography.callout.copyWith(
@@ -438,6 +487,7 @@ class _CategoryRail extends ConsumerWidget {
                 label: category.titleUz,
                 icon: category.icon,
                 color: category.color,
+                photoUrl: category.photoUrl,
                 onTap: () {
                   if (category == ServiceCategory.elektrQuvvatlash) {
                     context.push('/services');
@@ -514,6 +564,13 @@ class _CompanyTile extends StatelessWidget {
               ),
             ],
           ),
+          if (company.tags.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: AppPill(label: company.tags.first, tone: PillTone.primary, dense: true),
+            ),
+          ],
           const Spacer(),
           Text(
             AppFormatters.currency(company.productPrice),

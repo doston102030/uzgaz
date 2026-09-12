@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../app/theme/colors.dart';
@@ -105,6 +106,7 @@ class ServiceTile extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.onTap,
+    this.photoUrl,
   });
 
   final String label;
@@ -112,9 +114,32 @@ class ServiceTile extends StatelessWidget {
   final Color color;
   final VoidCallback onTap;
 
+  /// Real photo shown inside the circle instead of the plain icon glyph
+  /// (see [ServiceCategoryX.photoUrl]) — falls back to the icon tile below
+  /// while it loads, and again if it fails, same resilient pattern
+  /// [ProductCard] uses for product photos.
+  final String? photoUrl;
+
   @override
   Widget build(BuildContext context) {
     final c = context.palette;
+    final iconTile = Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            color.withValues(alpha: c.isDark ? 0.36 : 0.18),
+            color.withValues(alpha: c.isDark ? 0.20 : 0.08),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(13),
+      ),
+      child: Icon(icon, color: color, size: 21),
+    );
+
     return AppTappable(
       onTap: onTap,
       pressedScale: 0.94,
@@ -132,22 +157,19 @@ class ServiceTile extends StatelessWidget {
                 boxShadow: c.shadowSm,
               ),
               child: Center(
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        color.withValues(alpha: c.isDark ? 0.36 : 0.18),
-                        color.withValues(alpha: c.isDark ? 0.20 : 0.08),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  child: Icon(icon, color: color, size: 21),
-                ),
+                child: photoUrl == null
+                    ? iconTile
+                    : ClipRRect(
+                        borderRadius: BorderRadius.circular(13),
+                        child: CachedNetworkImage(
+                          imageUrl: photoUrl!,
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                          placeholder: (_, __) => iconTile,
+                          errorWidget: (_, __, ___) => iconTile,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(height: AppDimensions.space8),
@@ -179,6 +201,10 @@ class HighlightServiceCard extends StatelessWidget {
     this.title = 'SUYULTIRILGAN GAZ',
     this.caption = 'Subsidiya narxida · cheklangan miqdorda',
     this.badge = 'Aktiv',
+    this.icon = Icons.local_fire_department_rounded,
+    this.photoUrl,
+    this.gradient,
+    this.glowColor,
   });
 
   final VoidCallback onTap;
@@ -186,6 +212,21 @@ class HighlightServiceCard extends StatelessWidget {
   final String title;
   final String caption;
   final String badge;
+
+  /// Shown in the trailing circle when [photoUrl] isn't given (or hasn't
+  /// loaded yet) — every existing call site keeps its plain flame glyph.
+  final IconData icon;
+
+  /// Real photo for the trailing circle — used by [PromoCarousel]'s
+  /// slides. `null` keeps the original translucent icon-only look.
+  final String? photoUrl;
+
+  /// Slide background — defaults to the brand gradient (unchanged for
+  /// existing call sites); [PromoCarousel] varies this per slide.
+  final Gradient? gradient;
+
+  /// Tints the drop shadow under the card; defaults to brand primary.
+  final Color? glowColor;
 
   @override
   Widget build(BuildContext context) {
@@ -196,11 +237,12 @@ class HighlightServiceCard extends StatelessWidget {
       child: Container(
         constraints: const BoxConstraints(minHeight: 132),
         decoration: BoxDecoration(
-          gradient: c.brandGradient,
+          gradient: gradient ?? c.brandGradient,
           borderRadius: AppDimensions.brXLarge,
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withValues(alpha: c.isDark ? 0.36 : 0.30),
+              color: (glowColor ?? AppColors.primary)
+                  .withValues(alpha: c.isDark ? 0.36 : 0.30),
               blurRadius: 28,
               offset: const Offset(0, 12),
             ),
@@ -298,16 +340,24 @@ class HighlightServiceCard extends StatelessWidget {
                   Container(
                     width: 56,
                     height: 56,
+                    clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.18),
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
                     ),
-                    child: const Icon(
-                      Icons.local_fire_department_rounded,
-                      color: Colors.white,
-                      size: 28,
-                    ),
+                    child: photoUrl == null
+                        ? Icon(icon, color: Colors.white, size: 28)
+                        : CachedNetworkImage(
+                            imageUrl: photoUrl!,
+                            width: 56,
+                            height: 56,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) =>
+                                Icon(icon, color: Colors.white, size: 28),
+                            errorWidget: (_, __, ___) =>
+                                Icon(icon, color: Colors.white, size: 28),
+                          ),
                   ),
                 ],
               ),

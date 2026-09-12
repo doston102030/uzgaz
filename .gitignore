@@ -67,3 +67,6 @@ app.*.map.json
 # OS junk
 .DS_Store
 Thumbs.db
+
+# Supabase CLI local state
+supabase/.temp/

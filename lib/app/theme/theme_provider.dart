@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// App appearance. Defaults to following the OS, which is what users of a
-/// premium iOS app expect; the profile screen can override it.
+/// App appearance. Defaults to light — the product's designed look —
+/// regardless of OS setting; the profile screen can still override it.
 class ThemeModeNotifier extends StateNotifier<ThemeMode> {
-  ThemeModeNotifier() : super(ThemeMode.system);
+  ThemeModeNotifier() : super(ThemeMode.light);
 
   void set(ThemeMode mode) => state = mode;
 

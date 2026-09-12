@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/colors.dart';
@@ -23,10 +24,11 @@ import '../../../companies/presentation/providers/company_provider.dart';
 
 /// Map screen.
 ///
-/// The canvas below is a styled stand-in for `GoogleMap` — this project
-/// has no Maps API key, and a grey box would misrepresent the design.
-/// To go live: drop a `GoogleMap(...)` in place of [_MapCanvas], feed it
-/// the same `companies` markers, and keep the overlay chrome as is.
+/// [_MapCanvas] is a styled stand-in for a real map provider — swapping
+/// it for one is next on the roadmap (see README's "Xarita" section for
+/// the current status: a real Yandex Map integration was built and
+/// verified on the Dart side, but is on hold behind a Flutter-SDK/plugin
+/// Android compileSdk conflict found during testing).
 class MapPage extends ConsumerStatefulWidget {
   const MapPage({super.key});
 
@@ -38,6 +40,16 @@ class _MapPageState extends ConsumerState<MapPage> {
   final PageController _pageController =
       PageController(viewportFraction: 0.78);
   int _selected = 0;
+
+  /// Which Andijon tuman the map is focused on — re-centers [_MapCanvas]'s
+  /// projection without needing real GIS district boundaries.
+  AndijonDistrict _district = AndijonDistrict.andijonShahri;
+
+  /// Real device location, once [_useMyLocation] resolves one. Feeds the
+  /// user marker on [_MapCanvas]; falls back to [AppConstants.defaultLat]
+  /// / [AppConstants.defaultLng] (Tashkent) until then.
+  ({double lat, double lng})? _myLocation;
+  bool _locatingMe = false;
 
   @override
   void dispose() {
@@ -54,6 +66,43 @@ class _MapPageState extends ConsumerState<MapPage> {
     );
   }
 
+  Future<void> _useMyLocation() async {
+    if (_locatingMe) return;
+    setState(() => _locatingMe = true);
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        if (mounted) {
+          AppToast.show(context, 'Joylashuv xizmati o‘chirilgan',
+              icon: Icons.location_off_rounded);
+        }
+        return;
+      }
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          AppToast.show(context, 'Joylashuvga ruxsat berilmadi',
+              icon: Icons.location_off_rounded);
+        }
+        return;
+      }
+      final position =
+          await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      if (!mounted) return;
+      setState(() => _myLocation = (lat: position.latitude, lng: position.longitude));
+    } catch (_) {
+      if (mounted) {
+        AppToast.show(context, 'Joylashuvni aniqlab bo‘lmadi',
+            icon: Icons.error_outline_rounded);
+      }
+    } finally {
+      if (mounted) setState(() => _locatingMe = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = context.palette;
@@ -68,19 +117,21 @@ class _MapPageState extends ConsumerState<MapPage> {
               companies: companies,
               selectedIndex: _selected,
               onSelect: _select,
+              myLocation: _myLocation,
+              focusPoint: (lat: _district.latitude, lng: _district.longitude),
             ),
           ),
 
-          // Top chrome: search + filter, floating on glass.
+          // Top chrome: search + filter + district chips, floating on glass.
           Positioned(
             left: 0,
             right: 0,
             top: 0,
             child: Container(
               padding: EdgeInsets.fromLTRB(
-                AppDimensions.gutter,
+                0,
                 topPad + AppDimensions.space8,
-                AppDimensions.gutter,
+                0,
                 AppDimensions.space12,
               ),
               decoration: BoxDecoration(
@@ -93,24 +144,50 @@ class _MapPageState extends ConsumerState<MapPage> {
                   ],
                 ),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: AppSearchField(
-                      hint: 'Manzil yoki kompaniya qidirish',
-                      readOnly: true,
-                      onTap: () => AppToast.show(
-                        context,
-                        'Qidiruv Google Places bilan ulanadi',
-                      ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppDimensions.gutter),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: AppSearchField(
+                            hint: 'Manzil yoki kompaniya qidirish',
+                            readOnly: true,
+                            onTap: () => AppToast.show(
+                              context,
+                              'Qidiruv Google Places bilan ulanadi',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppDimensions.space8),
+                        AppIconButton(
+                          icon: Icons.tune_rounded,
+                          size: 48,
+                          iconSize: 20,
+                          onTap: () => context.push('/companies'),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: AppDimensions.space8),
-                  AppIconButton(
-                    icon: Icons.tune_rounded,
-                    size: 48,
-                    iconSize: 20,
-                    onTap: () => context.push('/companies'),
+                  const SizedBox(height: AppDimensions.space10),
+                  SizedBox(
+                    height: AppDimensions.chipHeight,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.gutter),
+                      itemCount: AndijonDistrict.values.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: AppDimensions.space8),
+                      itemBuilder: (context, i) {
+                        final district = AndijonDistrict.values[i];
+                        return AppChip(
+                          label: district.titleUz,
+                          selected: district == _district,
+                          onTap: () => setState(() => _district = district),
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -135,11 +212,13 @@ class _MapPageState extends ConsumerState<MapPage> {
                   icon: Icons.my_location_rounded,
                   size: 44,
                   foreground: c.primary,
-                  onTap: () => AppToast.show(
-                    context,
-                    'Joylashuv aniqlanmoqda…',
-                    icon: Icons.gps_fixed_rounded,
-                  ),
+                  onTap: _locatingMe
+                      ? null
+                      : () {
+                          AppToast.show(context, 'Joylashuv aniqlanmoqda…',
+                              icon: Icons.gps_fixed_rounded);
+                          _useMyLocation();
+                        },
                 ),
               ],
             ),
@@ -174,9 +253,9 @@ class _MapPageState extends ConsumerState<MapPage> {
                       ),
                       child: Row(
                         children: [
-                          const Flexible(
+                          Flexible(
                             child: AppPill(
-                              label: 'Yaqin atrofda 6 ta filial',
+                              label: 'Yaqin atrofda ${companies.length} ta filial',
                               tone: PillTone.primary,
                               icon: Icons.place_rounded,
                             ),
@@ -268,25 +347,41 @@ class _MapCanvas extends StatelessWidget {
     required this.companies,
     required this.selectedIndex,
     required this.onSelect,
+    this.myLocation,
+    this.focusPoint,
   });
 
   final List<Company> companies;
   final int selectedIndex;
   final ValueChanged<int> onSelect;
 
+  /// Real device location from [_MapPageState._useMyLocation], if the
+  /// buyer has granted it. Falls back to the Andijon default otherwise.
+  final ({double lat, double lng})? myLocation;
+
+  /// Selected Andijon tuman centre (see [AndijonDistrictX]) — folded into
+  /// the projection bounds below so picking a district chip visibly
+  /// shifts/zooms the view toward it, without needing real GIS polygons.
+  final ({double lat, double lng})? focusPoint;
+
   @override
   Widget build(BuildContext context) {
     final c = context.palette;
 
     // Companies load asynchronously now (Supabase), so this can briefly
-    // be empty right after launch — fall back to centering on Tashkent
-    // instead of `reduce`-ing an empty list.
-    final lats = companies.isEmpty
-        ? [AppConstants.defaultLat]
-        : companies.map((e) => e.latitude).toList();
-    final lngs = companies.isEmpty
-        ? [AppConstants.defaultLng]
-        : companies.map((e) => e.longitude).toList();
+    // be empty right after launch — fall back to centering on the
+    // selected district (Andijon by default) instead of `reduce`-ing an
+    // empty list.
+    final lats = [
+      if (companies.isEmpty) AppConstants.defaultLat,
+      ...companies.map((e) => e.latitude),
+      if (focusPoint != null) focusPoint!.lat,
+    ];
+    final lngs = [
+      if (companies.isEmpty) AppConstants.defaultLng,
+      ...companies.map((e) => e.longitude),
+      if (focusPoint != null) focusPoint!.lng,
+    ];
     final minLat = lats.reduce(math.min) - 0.012;
     final maxLat = lats.reduce(math.max) + 0.012;
     final minLng = lngs.reduce(math.min) - 0.012;
@@ -305,7 +400,10 @@ class _MapCanvas extends StatelessWidget {
           return Offset(x, y);
         }
 
-        final userPoint = project(41.311081, 69.240562);
+        final userPoint = project(
+          myLocation?.lat ?? AppConstants.defaultLat,
+          myLocation?.lng ?? AppConstants.defaultLng,
+        );
 
         return Stack(
           children: [
@@ -701,29 +799,40 @@ class _StreetPainter extends CustomPainter {
       }
     }
 
-    // Park, with a scatter of tree dots instead of a flat fill.
-    final parkRect = Rect.fromLTWH(
+    // Parks (Andijon's agricultural surroundings read as a second green
+    // patch, not just one civic park), each with a scatter of tree dots
+    // instead of a flat fill.
+    void drawPark(Rect parkRect) {
+      final parkRRect = RRect.fromRectAndRadius(parkRect, const Radius.circular(20));
+      canvas.drawRRect(parkRRect.shift(const Offset(0, 2)), shadowPaint);
+      canvas.drawRRect(parkRRect, Paint()..color = park);
+      canvas.save();
+      canvas.clipRRect(parkRRect);
+      final treeColor = Color.lerp(park, Colors.black, 0.18)!;
+      for (double y = parkRect.top + 6; y < parkRect.bottom; y += 13) {
+        for (double x = parkRect.left + 6; x < parkRect.right; x += 15) {
+          canvas.drawCircle(
+            Offset(x + random.nextDouble() * 4, y + random.nextDouble() * 4),
+            2.2,
+            Paint()..color = treeColor.withValues(alpha: 0.55),
+          );
+        }
+      }
+      canvas.restore();
+    }
+
+    drawPark(Rect.fromLTWH(
       size.width * 0.06,
       size.height * 0.52,
       size.width * 0.3,
       size.height * 0.16,
-    );
-    final parkRRect = RRect.fromRectAndRadius(parkRect, const Radius.circular(20));
-    canvas.drawRRect(parkRRect.shift(const Offset(0, 2)), shadowPaint);
-    canvas.drawRRect(parkRRect, Paint()..color = park);
-    canvas.save();
-    canvas.clipRRect(parkRRect);
-    final treeColor = Color.lerp(park, Colors.black, 0.18)!;
-    for (double y = parkRect.top + 6; y < parkRect.bottom; y += 13) {
-      for (double x = parkRect.left + 6; x < parkRect.right; x += 15) {
-        canvas.drawCircle(
-          Offset(x + random.nextDouble() * 4, y + random.nextDouble() * 4),
-          2.2,
-          Paint()..color = treeColor.withValues(alpha: 0.55),
-        );
-      }
-    }
-    canvas.restore();
+    ));
+    drawPark(Rect.fromLTWH(
+      size.width * 0.68,
+      size.height * 0.66,
+      size.width * 0.22,
+      size.height * 0.12,
+    ));
 
     // River: two-tone gradient stroke plus a lighter shoreline highlight.
     final river = Path()

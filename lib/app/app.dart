@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/widgets/responsive_frame.dart';
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
@@ -42,7 +43,7 @@ class GazEnergiyaApp extends ConsumerWidget {
               maxScaleFactor: 1.25,
             ),
           ),
-          child: child ?? const SizedBox.shrink(),
+          child: ResponsiveFrame(child: child ?? const SizedBox.shrink()),
         );
       },
     );
