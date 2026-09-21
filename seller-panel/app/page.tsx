@@ -1,10 +1,15 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Topbar } from "@/components/Topbar";
+import { SellerHeroBanner } from "@/components/SellerHeroBanner";
 import { StatCard } from "@/components/StatCard";
 import { RevenueChart } from "@/components/RevenueChart";
 import { Badge, BadgeTone } from "@/components/Badge";
-import { orders, products, revenueByDay } from "@/lib/mock-data";
+import { orders, revenueByDay } from "@/lib/mock-data";
+import { fetchSellerProducts, fetchSellerStatus } from "@/lib/db";
 import { formatCurrency, formatCurrencyShort, relativeTime } from "@/lib/format";
-import { SELLER_ORDER_STATUS_LABEL, SellerOrderStatus } from "@/lib/types";
+import { SELLER_ORDER_STATUS_LABEL, SellerOrderStatus, SellerProduct } from "@/lib/types";
 import { ClipboardList, Wallet, PackageCheck, ShieldAlert, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
@@ -17,6 +22,28 @@ const ORDER_TONE: Record<SellerOrderStatus, BadgeTone> = {
 };
 
 export default function DashboardPage() {
+  const [products, setProducts] = useState<SellerProduct[]>([]);
+  const [companyName, setCompanyName] = useState("...");
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchSellerProducts()
+      .then((rows) => {
+        if (!cancelled) setProducts(rows);
+      })
+      .catch(() => {
+        // Dashboard statistikasi ixtiyoriy — yuklanmasa 0 ko'rsatiladi.
+      });
+    fetchSellerStatus()
+      .then((status) => {
+        if (!cancelled) setCompanyName(status.company_name);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const revenue = revenueByDay(14);
   const periodRevenue = revenue.reduce((sum, d) => sum + d.revenue, 0);
   const activeProducts = products.filter((p) => p.moderationStatus === "approved").length;
@@ -29,8 +56,14 @@ export default function DashboardPage() {
 
   return (
     <>
-      <Topbar title="Bosh sahifa" subtitle="Andijon Gaz Ta'minot faoliyatiga umumiy nazar" />
+      <Topbar title="Bosh sahifa" subtitle={`${companyName} faoliyatiga umumiy nazar`} />
       <main className="flex-1 space-y-6 overflow-y-auto p-6">
+        <SellerHeroBanner
+          companyName={companyName}
+          newOrders={newOrders}
+          pendingProducts={pendingProducts}
+        />
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             label="Yangi buyurtmalar"

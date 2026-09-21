@@ -1,4 +1,5 @@
 import { Topbar } from "@/components/Topbar";
+import { HeroBanner } from "@/components/HeroBanner";
 import { StatCard } from "@/components/StatCard";
 import { RevenueChart } from "@/components/RevenueChart";
 import { Badge, CategoryTag } from "@/components/Badge";
@@ -38,6 +39,8 @@ export default function DashboardPage() {
         subtitle={`${companies.length} ta kompaniya · Andijon viloyati bo'yicha`}
       />
       <main className="flex-1 space-y-6 overflow-y-auto p-6">
+        <HeroBanner companyCount={companies.length} activeSellerCount={activeSellers} />
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             label="Bugungi buyurtmalar"

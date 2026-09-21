@@ -51,6 +51,8 @@ export interface SellerProduct {
   id: string;
   name: string;
   imageUrl: string;
+  /** Qo'shimcha rasm(lar) — birinchisi imageUrl bilan bir xil bo'ladi. */
+  images?: string[];
   categoryId: ServiceCategory;
   description: string;
   price: number;

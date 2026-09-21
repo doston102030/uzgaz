@@ -236,7 +236,15 @@ class _NavButton extends StatelessWidget {
               fontSize: 10.5,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             ),
-            child: Text(item.label, maxLines: 1, overflow: TextOverflow.ellipsis),
+            // Avoid clipped Uzbek labels on compact phones; a small scale
+            // adjustment is clearer than truncating a navigation destination.
+            child: SizedBox(
+              width: double.infinity,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(item.label, maxLines: 1),
+              ),
+            ),
           ),
         ],
       ),

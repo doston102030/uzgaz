@@ -148,11 +148,14 @@ class HomePage extends ConsumerWidget {
             SliverPadding(
               padding: AppDimensions.pagePadding,
               sliver: SliverGrid(
+                // A fixed card height keeps the image, price and add action
+                // comfortable on compact phones without creating oversized
+                // tiles on wider devices.
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   mainAxisSpacing: AppDimensions.space12,
                   crossAxisSpacing: AppDimensions.space12,
-                  childAspectRatio: 0.60,
+                  mainAxisExtent: 280,
                 ),
                 delegate: SliverChildBuilderDelegate(
                   (context, i) {

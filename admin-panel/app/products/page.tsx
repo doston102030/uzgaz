@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Topbar } from "@/components/Topbar";
 import { Badge, CategoryTag } from "@/components/Badge";
-import { products as seedProducts } from "@/lib/mock-data";
+import { fetchProducts, updateProductModeration } from "@/lib/db";
 import { ModerationStatus, Product, CATEGORY_COLOR, CATEGORY_LABEL } from "@/lib/types";
 import { formatCurrency } from "@/lib/format";
-import { Check, X, Clock } from "lucide-react";
+import { Check, X, Clock, Loader2 } from "lucide-react";
 import clsx from "clsx";
 
 const TABS: { key: ModerationStatus; label: string }[] = [
@@ -16,8 +16,30 @@ const TABS: { key: ModerationStatus; label: string }[] = [
 ];
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>(seedProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [tab, setTab] = useState<ModerationStatus>("pending");
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchProducts()
+      .then((rows) => {
+        if (!cancelled) setProducts(rows);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setLoadError(err instanceof Error ? err.message : "Mahsulotlarni yuklab bo'lmadi.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const counts = useMemo(
     () => ({
@@ -30,10 +52,22 @@ export default function ProductsPage() {
 
   const list = products.filter((p) => p.moderationStatus === tab);
 
-  function setStatus(id: string, status: ModerationStatus, reason?: string) {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, moderationStatus: status, rejectionReason: reason } : p)),
+  async function setStatus(id: string, status: ModerationStatus, reason?: string) {
+    const prev = products;
+    setSavingId(id);
+    setProducts((cur) =>
+      cur.map((p) => (p.id === id ? { ...p, moderationStatus: status, rejectionReason: reason } : p)),
     );
+    try {
+      await updateProductModeration(id, status, reason);
+    } catch (err) {
+      setProducts(prev);
+      alert(
+        `Holatni yangilab bo'lmadi: ${err instanceof Error ? err.message : "noma'lum xatolik"}`,
+      );
+    } finally {
+      setSavingId(null);
+    }
   }
 
   return (
@@ -68,6 +102,19 @@ export default function ProductsPage() {
           ))}
         </div>
 
+        {loadError && (
+          <p className="rounded-2xl border border-danger/30 bg-danger-tint px-4 py-3 text-sm text-danger">
+            Mahsulotlarni yuklab bo&apos;lmadi: {loadError}
+          </p>
+        )}
+
+        {loading && (
+          <div className="flex items-center justify-center gap-2 py-16 text-sm text-foreground/40">
+            <Loader2 className="h-4 w-4 animate-spin" /> Yuklanmoqda...
+          </div>
+        )}
+
+        {!loading && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {list.map((p) => (
             <div
@@ -98,24 +145,32 @@ export default function ProductsPage() {
 
                 {p.moderationStatus === "pending" && (
                   <div className="mt-4 flex gap-2">
-                    <button
-                      onClick={() => setStatus(p.id, "approved")}
-                      className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-success py-2 text-xs font-semibold text-white hover:brightness-95"
-                    >
-                      <Check className="h-3.5 w-3.5" /> Tasdiqlash
-                    </button>
-                    <button
-                      onClick={() =>
-                        setStatus(
-                          p.id,
-                          "rejected",
-                          "Admin tomonidan rad etildi — talablarga javob bermaydi.",
-                        )
-                      }
-                      className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-danger/30 py-2 text-xs font-semibold text-danger hover:bg-danger-tint"
-                    >
-                      <X className="h-3.5 w-3.5" /> Rad etish
-                    </button>
+                    {savingId === p.id ? (
+                      <div className="flex flex-1 items-center justify-center py-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-foreground/40" />
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => setStatus(p.id, "approved")}
+                          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-success py-2 text-xs font-semibold text-white hover:brightness-95"
+                        >
+                          <Check className="h-3.5 w-3.5" /> Tasdiqlash
+                        </button>
+                        <button
+                          onClick={() =>
+                            setStatus(
+                              p.id,
+                              "rejected",
+                              "Admin tomonidan rad etildi — talablarga javob bermaydi.",
+                            )
+                          }
+                          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-danger/30 py-2 text-xs font-semibold text-danger hover:bg-danger-tint"
+                        >
+                          <X className="h-3.5 w-3.5" /> Rad etish
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -137,6 +192,7 @@ export default function ProductsPage() {
             </div>
           )}
         </div>
+        )}
       </main>
     </>
   );

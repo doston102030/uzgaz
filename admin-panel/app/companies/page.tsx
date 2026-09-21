@@ -97,6 +97,12 @@ export default function CompaniesPage() {
             </div>
           ))}
         </div>
+
+        {filtered.length === 0 && (
+          <p className="rounded-2xl border border-dashed border-border py-16 text-center text-sm text-foreground/40">
+            Hozircha kompaniya yo&apos;q.
+          </p>
+        )}
       </main>
     </>
   );

@@ -1,8 +1,5 @@
 import { SellerOrder, SellerProduct, SellerProfile } from "./types";
 
-const CATALOG =
-  "https://haurszcvivpqdyenfwbb.supabase.co/storage/v1/object/public/product-images/catalog";
-
 export const profile: SellerProfile = {
   companyName: "Andijon Gaz Ta'minot",
   ownerName: "Sherzod Yo'ldoshev",
@@ -19,70 +16,8 @@ export const profile: SellerProfile = {
   createdAt: "2024-02-11",
 };
 
-export const products: SellerProduct[] = [
-  {
-    id: "sp1",
-    name: "Gaz ballon 50L",
-    imageUrl: `${CATALOG}/gazBallon.jpg`,
-    categoryId: "gazBallon",
-    description: "50 litrlik po'lat gaz ballon, uy va tijorat ehtiyojlari uchun.",
-    price: 120000,
-    oldPrice: 135000,
-    unit: "dona",
-    stockQty: 34,
-    moderationStatus: "approved",
-    createdAt: "2024-02-13",
-  },
-  {
-    id: "sp2",
-    name: "Gaz ballon 25L",
-    imageUrl: `${CATALOG}/gazBallon.jpg`,
-    categoryId: "gazBallon",
-    description: "Kichik uy xo'jaligi uchun qulay 25 litrlik ballon.",
-    price: 76000,
-    unit: "dona",
-    stockQty: 18,
-    moderationStatus: "approved",
-    createdAt: "2024-03-13",
-  },
-  {
-    id: "sp3",
-    name: "Benzin AI-95",
-    imageUrl: `${CATALOG}/benzin.jpg`,
-    categoryId: "benzin",
-    description: "Yevro-5 standartidagi AI-95 benzini.",
-    price: 12500,
-    unit: "litr",
-    stockQty: 500,
-    moderationStatus: "approved",
-    createdAt: "2024-04-02",
-  },
-  {
-    id: "sp4",
-    name: "Gaz reduktori (yangi)",
-    imageUrl: `${CATALOG}/market.jpg`,
-    categoryId: "market",
-    description: "Ballon uchun bosim reduktori, manometr bilan.",
-    price: 98000,
-    unit: "dona",
-    stockQty: 12,
-    moderationStatus: "pending",
-    createdAt: "2025-09-11",
-  },
-  {
-    id: "sp5",
-    name: "Metan konvertori",
-    imageUrl: `${CATALOG}/metanGaz.jpg`,
-    categoryId: "metanGaz",
-    description: "Avtomobilga o'rnatiladigan metan gaz konvertori to'plami.",
-    price: 3200000,
-    unit: "dona",
-    stockQty: 3,
-    moderationStatus: "rejected",
-    rejectionReason: "Mahsulot rasmiga texnik xavfsizlik sertifikati biriktirilmagan.",
-    createdAt: "2025-09-09",
-  },
-];
+// Demo mahsulotlar tozalandi — real mahsulotlaringizni (rasmlari bilan) shu yerdan qo'shasiz.
+export const products: SellerProduct[] = [];
 
 export const orders: SellerOrder[] = [
   {

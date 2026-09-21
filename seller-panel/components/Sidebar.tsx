@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   PackageSearch,
@@ -11,6 +12,14 @@ import {
   Flame,
 } from "lucide-react";
 import clsx from "clsx";
+import { fetchSellerStatus, SellerStatusRow } from "@/lib/db";
+
+const STATUS_TEXT: Record<SellerStatusRow["status"], string> = {
+  approved: "Hisobingiz tasdiqlangan va faol — buyurtmalar qabul qilishingiz mumkin.",
+  pending: "Hisobingiz hali admin tomonidan tekshirilmoqda — biroz kuting.",
+  rejected: "Hisobingiz rad etilgan. Batafsil uchun admin bilan bog'laning.",
+  suspended: "Hisobingiz vaqtincha to'xtatilgan — buyurtma qabul qilolmaysiz.",
+};
 
 const NAV = [
   { href: "/", label: "Bosh sahifa", icon: LayoutDashboard },
@@ -22,6 +31,21 @@ const NAV = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [status, setStatus] = useState<SellerStatusRow | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchSellerStatus()
+      .then((row) => {
+        if (!cancelled) setStatus(row);
+      })
+      .catch(() => {
+        // Sidebar — kichik ma'lumot widjeti, yuklanmasa ham sahifa ishlashda davom etadi.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-surface md:flex">
@@ -57,9 +81,11 @@ export function Sidebar() {
       </nav>
 
       <div className="m-3 rounded-2xl border border-border bg-surface-muted p-4">
-        <p className="text-xs font-semibold text-foreground/70">Andijon Gaz Ta&apos;minot</p>
+        <p className="text-xs font-semibold text-foreground/70">
+          {status?.company_name ?? "Yuklanmoqda..."}
+        </p>
         <p className="mt-1 text-xs text-foreground/50">
-          Hisobingiz tasdiqlangan va faol — buyurtmalar qabul qilishingiz mumkin.
+          {status ? STATUS_TEXT[status.status] : ""}
         </p>
       </div>
     </aside>

@@ -42,6 +42,11 @@ function(APPLY_STANDARD_SETTINGS TARGET)
   target_compile_options(${TARGET} PRIVATE /W4 /WX /wd"4100")
   target_compile_options(${TARGET} PRIVATE /EHsc)
   target_compile_definitions(${TARGET} PRIVATE "_HAS_EXCEPTIONS=0")
+  # permission_handler_windows currently includes the legacy coroutine
+  # compatibility header. Newer MSVC toolchains promote its deprecation to
+  # an error unless this compatibility warning is explicitly acknowledged.
+  target_compile_definitions(${TARGET} PRIVATE
+    "_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS")
   target_compile_definitions(${TARGET} PRIVATE "$<$<CONFIG:Debug>:_DEBUG>")
 endfunction()
 

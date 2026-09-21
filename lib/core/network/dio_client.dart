@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 
 /// Thin Dio wrapper. Points at a placeholder base URL for now — swap
@@ -14,9 +15,14 @@ class DioClient {
         headers: {'Content-Type': 'application/json'},
       ),
     );
-    _dio.interceptors.add(
-      LogInterceptor(requestBody: true, responseBody: true),
-    );
+    // Request and response bodies can contain tokens or personal details.
+    // Keep useful diagnostics during development, but never expose them in a
+    // release build's device logs.
+    if (kDebugMode) {
+      _dio.interceptors.add(
+        LogInterceptor(requestBody: true, responseBody: true),
+      );
+    }
   }
 
   static final DioClient instance = DioClient._internal();

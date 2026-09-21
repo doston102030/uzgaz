@@ -31,6 +31,12 @@
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
+    <!-- Required in every build variant (not just debug/profile) because
+         the app talks to the network at runtime: Supabase auth/storage/
+         catalog data and the map's OpenStreetMap tiles. Without this,
+         release builds silently lose all network access. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <!-- image_picker: needed to launch the camera source ("Kameradan"
          option on every AppImagePickerField). Gallery picks go through
          the system Photo Picker and need no permission on modern Android. -->

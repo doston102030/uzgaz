@@ -8,6 +8,7 @@ Future<List<Product>> fetchProducts() async {
   final rows = await SupabaseService.client
       .from('products')
       .select()
+      .eq('moderation_status', 'approved')
       .order('created_at');
 
   return rows.map(_productFromRow).toList();

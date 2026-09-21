@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Topbar } from "@/components/Topbar";
 import { Badge, BadgeTone, CategoryTag } from "@/components/Badge";
-import { sellers as seedSellers } from "@/lib/mock-data";
+import { fetchSellers, updateSellerStatus } from "@/lib/db";
 import { Seller, SellerStatus, CATEGORY_COLOR, CATEGORY_LABEL } from "@/lib/types";
 import { formatDate } from "@/lib/format";
-import { Check, X, Ban, RotateCcw, Phone, MapPin } from "lucide-react";
+import { Check, X, Ban, RotateCcw, Phone, MapPin, Loader2 } from "lucide-react";
 import clsx from "clsx";
 
 const STATUS_LABEL: Record<SellerStatus, string> = {
@@ -32,8 +32,30 @@ const TABS: { key: SellerStatus | "all"; label: string }[] = [
 ];
 
 export default function SellersPage() {
-  const [sellers, setSellers] = useState<Seller[]>(seedSellers);
+  const [sellers, setSellers] = useState<Seller[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [tab, setTab] = useState<SellerStatus | "all">("all");
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchSellers()
+      .then((rows) => {
+        if (!cancelled) setSellers(rows);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setLoadError(err instanceof Error ? err.message : "Sotuvchilarni yuklab bo'lmadi.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const list = tab === "all" ? sellers : sellers.filter((s) => s.status === tab);
   const counts = useMemo(() => {
@@ -42,8 +64,20 @@ export default function SellersPage() {
     return c;
   }, [sellers]);
 
-  function setStatus(id: string, status: SellerStatus) {
-    setSellers((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
+  async function setStatus(id: string, status: SellerStatus) {
+    const prev = sellers;
+    setSavingId(id);
+    setSellers((cur) => cur.map((s) => (s.id === id ? { ...s, status } : s)));
+    try {
+      await updateSellerStatus(id, status);
+    } catch (err) {
+      setSellers(prev);
+      alert(
+        `Holatni yangilab bo'lmadi: ${err instanceof Error ? err.message : "noma'lum xatolik"}`,
+      );
+    } finally {
+      setSavingId(null);
+    }
   }
 
   return (
@@ -78,7 +112,18 @@ export default function SellersPage() {
           ))}
         </div>
 
+        {loadError && (
+          <p className="rounded-2xl border border-danger/30 bg-danger-tint px-4 py-3 text-sm text-danger">
+            Sotuvchilarni yuklab bo&apos;lmadi: {loadError}
+          </p>
+        )}
+
         <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm shadow-black/[0.02]">
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-16 text-sm text-foreground/40">
+              <Loader2 className="h-4 w-4 animate-spin" /> Yuklanmoqda...
+            </div>
+          ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[820px] text-left text-sm">
               <thead>
@@ -121,41 +166,49 @@ export default function SellersPage() {
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex gap-1.5">
-                        {s.status === "pending" && (
+                        {savingId === s.id ? (
+                          <div className="flex h-8 w-8 items-center justify-center">
+                            <Loader2 className="h-4 w-4 animate-spin text-foreground/40" />
+                          </div>
+                        ) : (
                           <>
-                            <button
-                              onClick={() => setStatus(s.id, "approved")}
-                              title="Tasdiqlash"
-                              className="flex h-8 w-8 items-center justify-center rounded-lg bg-success-tint text-success hover:brightness-95"
-                            >
-                              <Check className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => setStatus(s.id, "rejected")}
-                              title="Rad etish"
-                              className="flex h-8 w-8 items-center justify-center rounded-lg bg-danger-tint text-danger hover:brightness-95"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
+                            {s.status === "pending" && (
+                              <>
+                                <button
+                                  onClick={() => setStatus(s.id, "approved")}
+                                  title="Tasdiqlash"
+                                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-success-tint text-success hover:brightness-95"
+                                >
+                                  <Check className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => setStatus(s.id, "rejected")}
+                                  title="Rad etish"
+                                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-danger-tint text-danger hover:brightness-95"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </>
+                            )}
+                            {s.status === "approved" && (
+                              <button
+                                onClick={() => setStatus(s.id, "suspended")}
+                                title="To'xtatish"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-muted text-foreground/60 hover:bg-warning-tint hover:text-warning"
+                              >
+                                <Ban className="h-4 w-4" />
+                              </button>
+                            )}
+                            {(s.status === "suspended" || s.status === "rejected") && (
+                              <button
+                                onClick={() => setStatus(s.id, "approved")}
+                                title="Qayta tiklash"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg bg-success-tint text-success hover:brightness-95"
+                              >
+                                <RotateCcw className="h-4 w-4" />
+                              </button>
+                            )}
                           </>
-                        )}
-                        {s.status === "approved" && (
-                          <button
-                            onClick={() => setStatus(s.id, "suspended")}
-                            title="To'xtatish"
-                            className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-muted text-foreground/60 hover:bg-warning-tint hover:text-warning"
-                          >
-                            <Ban className="h-4 w-4" />
-                          </button>
-                        )}
-                        {(s.status === "suspended" || s.status === "rejected") && (
-                          <button
-                            onClick={() => setStatus(s.id, "approved")}
-                            title="Qayta tiklash"
-                            className="flex h-8 w-8 items-center justify-center rounded-lg bg-success-tint text-success hover:brightness-95"
-                          >
-                            <RotateCcw className="h-4 w-4" />
-                          </button>
                         )}
                       </div>
                     </td>
@@ -164,7 +217,8 @@ export default function SellersPage() {
               </tbody>
             </table>
           </div>
-          {list.length === 0 && (
+          )}
+          {!loading && list.length === 0 && (
             <p className="p-8 text-center text-sm text-foreground/40">
               Bu bo&apos;limda hozircha sotuvchi yo&apos;q.
             </p>
