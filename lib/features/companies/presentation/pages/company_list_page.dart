@@ -182,19 +182,18 @@ class _CompaniesHeaderBanner extends StatelessWidget {
     final c = context.palette;
     return ClipRRect(
       borderRadius: AppDimensions.brXLarge,
-      child: SizedBox(
-        height: 112,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 112),
         child: Stack(
-          fit: StackFit.expand,
           children: [
-            CachedNetworkImage(
+            Positioned.fill(child: CachedNetworkImage(
               imageUrl:
-                  'https://haurszcvivpqdyenfwbb.supabase.co/storage/v1/object/public/product-images/categories/companies-header.jpg',
+                  'https://xasjpasaatswhxmgvvsg.supabase.co/storage/v1/object/public/product-images/categories/companies-header.jpg',
               fit: BoxFit.cover,
               placeholder: (_, __) => Container(color: c.surfaceMuted),
               errorWidget: (_, __, ___) => Container(color: c.surfaceMuted),
-            ),
-            DecoratedBox(
+            )),
+            Positioned.fill(child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
@@ -205,10 +204,11 @@ class _CompaniesHeaderBanner extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
+            )),
             Padding(
               padding: const EdgeInsets.all(AppDimensions.space16),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -222,7 +222,7 @@ class _CompaniesHeaderBanner extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     '$count ta sertifikatlangan hamkor · litsenziyalangan yetkazib beruvchilar',
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.caption.copyWith(
                       color: Colors.white.withValues(alpha: 0.85),

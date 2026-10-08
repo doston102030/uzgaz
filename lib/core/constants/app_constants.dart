@@ -118,7 +118,7 @@ extension ServiceCategoryX on ServiceCategory {
 }
 
 const String _categoryPhotoBase =
-    'https://haurszcvivpqdyenfwbb.supabase.co/storage/v1/object/public/product-images/categories';
+    'https://xasjpasaatswhxmgvvsg.supabase.co/storage/v1/object/public/product-images/categories';
 
 /// Andijon viloyati — xarita ekranidagi hudud filtri. Andijon shahri
 /// (viloyat markazi) + 14 ta tuman, taxminiy markaziy koordinatalari bilan.

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../app/theme/colors.dart';
 import '../../app/theme/dimensions.dart';
 import '../../app/theme/motion.dart';
 import '../../app/theme/typography.dart';
+import '../utils/haptics.dart';
 import 'app_button.dart';
+import 'app_tappable.dart';
 
 /// Confirmation dialog — required before an order is placed (UX rule:
 /// "use confirmation before placing an order").
@@ -22,7 +23,7 @@ class CustomDialog {
     bool destructive = false,
     String? highlight,
   }) async {
-    HapticFeedback.mediumImpact();
+    AppHaptics.emphasis();
     final result = await showGeneralDialog<bool>(
       context: context,
       barrierDismissible: true,
@@ -194,7 +195,13 @@ class _DialogBody extends StatelessWidget {
   }
 }
 
-/// Modal bottom sheet with the app's rounded top, drag handle and title.
+/// Modal bottom sheet with the app's rounded top, drag handle, title row
+/// (optional subtitle + round close button) and keyboard-aware padding.
+///
+/// Opens on the **root** navigator so it covers the floating tab bar
+/// instead of sliding in underneath it. Callers that close it with a page
+/// `context` must therefore pop the root navigator:
+/// `Navigator.of(context, rootNavigator: true).pop(value)`.
 class AppSheet {
   const AppSheet._();
 
@@ -202,10 +209,12 @@ class AppSheet {
     BuildContext context, {
     required Widget child,
     String? title,
+    String? subtitle,
     bool isScrollControlled = true,
   }) {
     return showModalBottomSheet<T>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: isScrollControlled,
       backgroundColor: context.palette.surface,
       barrierColor: context.palette.scrim,
@@ -225,13 +234,38 @@ class AppSheet {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
                       AppDimensions.gutter,
-                      AppDimensions.space4,
-                      AppDimensions.gutter,
+                      0,
+                      AppDimensions.space16,
                       AppDimensions.space16,
                     ),
-                    child: Text(
-                      title,
-                      style: AppTypography.title3.copyWith(color: c.textPrimary),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                style: AppTypography.title2
+                                    .copyWith(color: c.textPrimary),
+                              ),
+                              if (subtitle != null) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  subtitle,
+                                  style: AppTypography.subhead
+                                      .copyWith(color: c.textSecondary),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: AppDimensions.space12),
+                        _SheetCloseButton(
+                          onTap: () => Navigator.of(context).maybePop(),
+                        ),
+                      ],
                     ),
                   ),
                 Flexible(child: child),
@@ -241,6 +275,200 @@ class AppSheet {
           ),
         );
       },
+    );
+  }
+}
+
+class _SheetCloseButton extends StatelessWidget {
+  const _SheetCloseButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.palette;
+    return Semantics(
+      button: true,
+      label: 'Yopish',
+      child: AppTappable(
+        onTap: onTap,
+        pressedScale: 0.88,
+        child: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: c.isDark ? c.surfaceMuted : c.backgroundSunken,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(Icons.close_rounded, size: 18, color: c.textSecondary),
+        ),
+      ),
+    );
+  }
+}
+
+/// One choice inside an [AppSheet] picker (sort order, language, …): a
+/// rounded row with a tinted leading tile, label + hint, and a radio tick.
+/// The selected row lifts onto a primary tint so the current choice reads
+/// at a glance.
+class AppSheetOption extends StatelessWidget {
+  const AppSheetOption({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.subtitle,
+    this.icon,
+    this.iconColor,
+    this.leading,
+  });
+
+  final String label;
+  final String? subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+
+  /// Icon drawn in a tinted rounded tile; ignored when [leading] is set.
+  final IconData? icon;
+  final Color? iconColor;
+
+  /// Custom content for the leading tile (e.g. a flag emoji).
+  final Widget? leading;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.palette;
+    final accent = iconColor ?? c.primary;
+    final hasLeading = leading != null || icon != null;
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: AppTappable(
+        onTap: onTap,
+        pressedScale: 0.98,
+        child: AnimatedContainer(
+          duration: AppMotion.fast,
+          curve: AppMotion.standard,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.space14,
+            vertical: AppDimensions.space12,
+          ),
+          decoration: BoxDecoration(
+            color: selected
+                ? c.tint(c.primary, 0.08)
+                : (c.isDark ? c.surfaceMuted : c.background),
+            borderRadius: AppDimensions.brMedium,
+            border: Border.all(
+              color: selected
+                  ? c.primary.withValues(alpha: 0.45)
+                  : Colors.transparent,
+              width: 1.4,
+            ),
+          ),
+          child: Row(
+            children: [
+              if (hasLeading) ...[
+                Container(
+                  width: 40,
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: leading != null ? c.surface : c.tint(accent, 0.14),
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusXSmall + 2),
+                  ),
+                  child: leading ?? Icon(icon, size: 20, color: accent),
+                ),
+                const SizedBox(width: AppDimensions.space12),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.callout.copyWith(
+                        color: c.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 1),
+                      Text(
+                        subtitle!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.caption
+                            .copyWith(color: c.textSecondary),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppDimensions.space12),
+              _RadioTick(selected: selected),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RadioTick extends StatelessWidget {
+  const _RadioTick({required this.selected});
+
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.palette;
+    return AnimatedContainer(
+      duration: AppMotion.fast,
+      curve: AppMotion.standard,
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        color: selected ? c.primary : Colors.transparent,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: selected ? c.primary : c.borderStrong,
+          width: 1.8,
+        ),
+      ),
+      child: AnimatedScale(
+        duration: AppMotion.base,
+        curve: AppMotion.spring,
+        scale: selected ? 1 : 0,
+        child: Icon(Icons.check_rounded, size: 15, color: c.onPrimary),
+      ),
+    );
+  }
+}
+
+/// Stack of [AppSheetOption]s with the sheet's side gutter and even gaps.
+class AppSheetOptionList extends StatelessWidget {
+  const AppSheetOptionList({super.key, required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: AppDimensions.pagePadding,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (int i = 0; i < children.length; i++) ...[
+            if (i > 0) const SizedBox(height: AppDimensions.space8),
+            children[i],
+          ],
+        ],
+      ),
     );
   }
 }
@@ -274,7 +502,7 @@ class AppToast {
           ToastTone.danger => Icons.error_rounded,
         };
 
-    HapticFeedback.lightImpact();
+    AppHaptics.tap();
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(

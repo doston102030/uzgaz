@@ -10,6 +10,19 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(seedProfile);
   const [saved, setSaved] = useState(false);
 
+  if (!profile) {
+    return (
+      <>
+        <Topbar title="Profil" subtitle="Kompaniya ma'lumotlari va sozlamalar" />
+        <main className="flex-1 p-6">
+          <p className="rounded-2xl border border-border bg-surface p-6 text-foreground/60">
+            Sotuvchi profili hali qo&apos;shilmagan.
+          </p>
+        </main>
+      </>
+    );
+  }
+
   return (
     <>
       <Topbar title="Profil" subtitle="Kompaniya ma'lumotlari va sozlamalar" />

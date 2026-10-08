@@ -7,6 +7,7 @@ import '../../../../app/theme/dimensions.dart';
 import '../../../../app/theme/typography.dart';
 import '../../../../core/widgets/app_nav_bar.dart';
 import '../../../../core/widgets/app_surface.dart';
+import '../../../../core/widgets/app_switch.dart';
 import '../../../../core/widgets/app_tappable.dart';
 import '../../../../core/widgets/custom_dialog.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -25,7 +26,7 @@ class AdminSettingsPage extends ConsumerWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          const AppSliverNavBar(title: 'Sozlamalar', showBack: false),
+          const AppSliverNavBar(title: 'Sozlamalar'),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
               AppDimensions.gutter,
@@ -106,7 +107,7 @@ class AdminSettingsPage extends ConsumerWidget {
                             ],
                           ),
                         ),
-                        Switch.adaptive(
+                        AppSwitch(
                           value: promoActive,
                           onChanged: (v) => ref.read(promoBannerActiveProvider.notifier).state = v,
                         ),

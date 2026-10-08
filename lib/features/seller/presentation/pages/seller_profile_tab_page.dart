@@ -27,7 +27,7 @@ class SellerProfileTabPage extends ConsumerWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          const AppSliverNavBar(title: 'Profil', showBack: false),
+          const AppSliverNavBar(title: 'Profil'),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
               AppDimensions.gutter,

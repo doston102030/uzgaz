@@ -62,19 +62,4 @@ create policy "public write products" on public.products
 -- `.eq('moderation_status', 'approved')` so pending/rejected seller
 -- submissions never show to real buyers. Already done in this pass.
 
--- ── seed: the one demo seller used by seller-panel right now ───────
--- (id doubles as its companies.id — one seller per company for now)
-update public.companies set name = 'Andijon Gaz Markazi' where id = 'c1';
-
-insert into public.sellers
-  (id, company_name, owner_name, category, district, address, phone, status, rating, review_count)
-values
-  ('c1', 'Andijon Gaz Markazi', 'Sherzod Yo''ldoshev', 'gazBallon', 'Andijon shahri',
-   'Bobur shoh ko''chasi 108', '+998 74 225 10 10', 'approved', 4.8, 214)
-on conflict (id) do update set
-  company_name = excluded.company_name,
-  owner_name = excluded.owner_name,
-  category = excluded.category,
-  district = excluded.district,
-  address = excluded.address,
-  phone = excluded.phone;
+-- Sellers are created explicitly; no demo account is seeded.

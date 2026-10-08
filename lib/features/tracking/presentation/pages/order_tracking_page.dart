@@ -392,9 +392,7 @@ class _TrackingMap extends StatelessWidget {
           Positioned(
             left: AppDimensions.gutter,
             top: topPad + AppDimensions.space8,
-            child: AppIconButton(
-              icon: Icons.arrow_back_ios_new_rounded,
-              iconSize: 16,
+            child: AppBackButton(
               onTap: () {
                 if (context.canPop()) {
                   context.pop();

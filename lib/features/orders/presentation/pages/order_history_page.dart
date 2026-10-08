@@ -50,7 +50,6 @@ class _OrderHistoryPageState extends ConsumerState<OrderHistoryPage> {
             subtitle: active.isEmpty
                 ? '${all.length} ta buyurtma'
                 : '${active.length} ta faol buyurtma',
-            showBack: false,
           ),
           SliverPinnedBar(
             height: 58,
@@ -119,122 +118,153 @@ class _OrderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.palette;
     final isActive = order.status.isActive;
+    final statusColor = order.status.color(c);
+    final subtitle = !isActive
+        ? order.status.hintUz
+        : order.deliveryMethod == DeliveryMethod.delivery
+            ? 'Taxminan ${AppFormatters.time(order.eta)} da yetkaziladi'
+            : 'Olib ketishga tayyorlanmoqda';
 
     return AppCard(
       onTap: () => context.push('/orders/${order.id}/tracking'),
-      padding: const EdgeInsets.all(AppDimensions.space14),
+      padding: const EdgeInsets.all(AppDimensions.space16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Status first — it's what the buyer opens this tab to learn.
           Row(
             children: [
-              Text(
-                order.orderNumber,
-                style: AppTypography.callout.copyWith(
-                  color: c.textPrimary,
-                  fontWeight: FontWeight.w700,
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: c.tint(statusColor, 0.12),
+                  shape: BoxShape.circle,
                 ),
-              ),
-              const SizedBox(width: AppDimensions.space8),
-              Expanded(
-                child: Text(
-                  AppFormatters.relativeDate(order.date),
-                  style: AppTypography.caption.copyWith(color: c.textTertiary),
-                ),
-              ),
-              OrderStatusBadge(status: order.status, dense: true),
-            ],
-          ),
-          const SizedBox(height: AppDimensions.space12),
-          Row(
-            children: [
-              EnergyAvatar(
-                visual: EnergyVisualX.fromCategory(
-                  order.items.isEmpty ? '' : order.items.first.categoryId,
-                  name: order.summary,
-                ),
-                size: 48,
+                child: Icon(order.status.icon, size: 20, color: statusColor),
               ),
               const SizedBox(width: AppDimensions.space12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      order.summary,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.callout.copyWith(
-                        color: c.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
                     Row(
                       children: [
-                        Icon(Icons.storefront_rounded,
-                            size: 12, color: c.textTertiary),
-                        const SizedBox(width: 3),
-                        Expanded(
+                        Flexible(
                           child: Text(
-                            '${order.companyName} · ${order.itemCount} dona',
+                            order.status.labelUz,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: AppTypography.caption
-                                .copyWith(color: c.textTertiary),
+                            style: AppTypography.headline.copyWith(
+                              color: c.textPrimary,
+                              fontSize: 16,
+                            ),
                           ),
                         ),
+                        if (isActive) ...[
+                          const SizedBox(width: 2),
+                          LivePulse(color: statusColor, size: 6),
+                        ],
                       ],
+                    ),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.caption.copyWith(color: c.textSecondary),
                     ),
                   ],
                 ),
               ),
-              Text(
-                AppFormatters.currency(order.total),
-                style: AppTypography.priceSmall.copyWith(color: c.textPrimary),
+              const SizedBox(width: AppDimensions.space8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    order.orderNumber,
+                    style: AppTypography.caption.copyWith(
+                      color: c.textSecondary,
+                      fontWeight: FontWeight.w600,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    AppFormatters.relativeDate(order.date),
+                    style: AppTypography.caption2.copyWith(
+                      color: c.textTertiary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
           if (isActive) ...[
-            Divider(height: AppDimensions.space24, color: c.separator),
-            Row(
+            const SizedBox(height: AppDimensions.space14),
+            OrderProgressBar(status: order.status),
+          ],
+          const SizedBox(height: AppDimensions.space14),
+          // What was ordered, on a recessed tile.
+          Container(
+            padding: const EdgeInsets.all(AppDimensions.space10),
+            decoration: BoxDecoration(
+              color: c.isDark ? c.surfaceMuted : c.background,
+              borderRadius: AppDimensions.brMedium,
+            ),
+            child: Row(
               children: [
-                const LivePulse(),
-                const SizedBox(width: AppDimensions.space4),
+                EnergyAvatar(
+                  visual: EnergyVisualX.fromCategory(
+                    order.items.isEmpty ? '' : order.items.first.categoryId,
+                    name: order.summary,
+                  ),
+                  size: 44,
+                ),
+                const SizedBox(width: AppDimensions.space12),
                 Expanded(
-                  child: Text(
-                    order.deliveryMethod == DeliveryMethod.delivery
-                        ? 'Taxminan ${AppFormatters.time(order.eta)} da yetkaziladi'
-                        : 'Olib ketishga tayyorlanmoqda',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.caption.copyWith(color: c.textSecondary),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        order.summary,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.callout.copyWith(
+                          color: c.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        '${order.companyName} · ${order.itemCount} dona',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.caption.copyWith(color: c.textSecondary),
+                      ),
+                    ],
                   ),
                 ),
+                Icon(Icons.chevron_right_rounded, size: 20, color: c.textTertiary),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppDimensions.space14),
+          Row(
+            children: [
+              const Spacer(),
+              if (isActive)
                 AppButton(
                   label: 'Kuzatish',
+                  icon: Icons.near_me_rounded,
                   size: AppButtonSize.small,
                   expand: false,
                   onPressed: () => context.push('/orders/${order.id}/tracking'),
-                ),
-              ],
-            ),
-          ] else ...[
-            Divider(height: AppDimensions.space24, color: c.separator),
-            Row(
-              children: [
-                Icon(Icons.check_circle_rounded, size: 15, color: c.success),
-                const SizedBox(width: AppDimensions.space6),
-                Expanded(
-                  child: Text(
-                    'Yetkazildi · ${AppFormatters.dateOnly(order.date)}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.caption.copyWith(color: c.textSecondary),
-                  ),
-                ),
+                )
+              else
                 AppButton(
                   label: 'Takrorlash',
+                  icon: Icons.refresh_rounded,
                   size: AppButtonSize.small,
                   variant: AppButtonVariant.ghost,
                   expand: false,
@@ -246,9 +276,8 @@ class _OrderCard extends StatelessWidget {
                     onAction: () => context.push('/cart'),
                   ),
                 ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ],
       ),
     );

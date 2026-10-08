@@ -54,7 +54,6 @@ class _SellerOrdersPageState extends ConsumerState<SellerOrdersPage> {
           AppSliverNavBar(
             title: 'Buyurtmalar',
             subtitle: '${all.length} ta jami',
-            showBack: false,
           ),
           SliverPinnedBar(
             height: 58,

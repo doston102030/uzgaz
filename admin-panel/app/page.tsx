@@ -47,14 +47,12 @@ export default function DashboardPage() {
             value={String(todayOrders.length)}
             icon={ClipboardList}
             tone="brand"
-            trend={{ value: "12% o'sish", positive: true }}
           />
           <StatCard
             label="Oxirgi 14 kunlik tushum"
             value={formatCurrencyShort(monthRevenue)}
             icon={Wallet}
             tone="success"
-            trend={{ value: "8% o'sish", positive: true }}
           />
           <StatCard
             label="Faol sotuvchilar"

@@ -56,7 +56,7 @@ export default function ReportsPage() {
           />
           <StatCard
             label="Reyting"
-            value="4.8"
+            value="—"
             icon={Star}
             tone="warning"
           />

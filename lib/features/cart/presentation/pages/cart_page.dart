@@ -6,6 +6,7 @@ import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/dimensions.dart';
 import '../../../../app/theme/typography.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/utils/haptics.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_nav_bar.dart';
 import '../../../../core/widgets/app_surface.dart';
@@ -200,6 +201,7 @@ class _CartRow extends ConsumerWidget {
         child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
       ),
       onDismissed: (_) {
+        AppHaptics.emphasis();
         notifier.remove(item.product.id);
         AppToast.show(
           context,

@@ -34,13 +34,20 @@ class ResponsiveFrame extends StatelessWidget {
           child: Center(
             child: Container(
               width: AppDimensions.maxContentWidth,
-              margin: const EdgeInsets.symmetric(vertical: AppDimensions.space24),
+              margin: EdgeInsets.symmetric(
+                vertical: constraints.maxHeight < 600 ? 0 : AppDimensions.space24,
+              ),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(AppDimensions.radiusSheet),
                 boxShadow: c.shadowLg,
               ),
               clipBehavior: Clip.antiAlias,
-              child: child,
+              child: LayoutBuilder(
+                builder: (context, frame) => MediaQuery(
+                  data: MediaQuery.of(context).copyWith(size: frame.biggest),
+                  child: child,
+                ),
+              ),
             ),
           ),
         );

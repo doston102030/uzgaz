@@ -11,6 +11,7 @@ import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/app_image_picker_field.dart';
 import '../../../../core/widgets/app_nav_bar.dart';
 import '../../../../core/widgets/app_surface.dart';
+import '../../../../core/widgets/app_switch.dart';
 import '../../../../core/widgets/app_tappable.dart';
 import '../../../../core/widgets/custom_dialog.dart';
 import '../../../addresses/presentation/providers/address_provider.dart';
@@ -25,16 +26,16 @@ class ProfilePage extends ConsumerWidget {
     final picked = await AppSheet.show<AppLanguage>(
       context,
       title: 'Tilni tanlang',
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      subtitle: 'Ilova interfeysi shu tilda ko‘rinadi',
+      child: AppSheetOptionList(
         children: [
           for (final language in AppLanguage.values)
-            _LanguageRow(
-              language: language,
+            AppSheetOption(
+              label: language.label,
+              leading: Text(language.flag, style: const TextStyle(fontSize: 22)),
               selected: language == current,
-              onTap: () => Navigator.of(context).pop(language),
+              onTap: () => Navigator.of(context, rootNavigator: true).pop(language),
             ),
-          const SizedBox(height: AppDimensions.space8),
         ],
       ),
     );
@@ -58,7 +59,7 @@ class ProfilePage extends ConsumerWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          const AppSliverNavBar(title: 'Profil', showBack: false),
+          const AppSliverNavBar(title: 'Profil'),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
               AppDimensions.gutter,
@@ -155,7 +156,7 @@ class ProfilePage extends ConsumerWidget {
                         icon: Icons.notifications_none_rounded,
                         tone: AppColors.info,
                         title: 'Bildirishnomalar',
-                        trailing: Switch.adaptive(
+                        trailing: AppSwitch(
                           value: true,
                           onChanged: (_) => AppToast.show(
                             context,
@@ -167,7 +168,7 @@ class ProfilePage extends ConsumerWidget {
                         icon: Icons.dark_mode_outlined,
                         tone: AppColors.energySlate,
                         title: 'Tungi rejim',
-                        trailing: Switch.adaptive(
+                        trailing: AppSwitch(
                           value: isDark,
                           onChanged: (value) =>
                               ref.read(themeModeProvider.notifier).setDark(value),
@@ -463,49 +464,6 @@ class _SettingsRow extends StatelessWidget {
               trailing!
             else if (onTap != null)
               Icon(Icons.chevron_right_rounded, size: 20, color: c.textTertiary),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LanguageRow extends StatelessWidget {
-  const _LanguageRow({
-    required this.language,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final AppLanguage language;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.palette;
-    return AppTappable(
-      onTap: onTap,
-      child: Container(
-        color: Colors.transparent,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.gutter,
-          vertical: AppDimensions.space14,
-        ),
-        child: Row(
-          children: [
-            Text(language.flag, style: const TextStyle(fontSize: 22)),
-            const SizedBox(width: AppDimensions.space12),
-            Expanded(
-              child: Text(
-                language.label,
-                style: AppTypography.body.copyWith(
-                  color: c.textPrimary,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                ),
-              ),
-            ),
-            if (selected) Icon(Icons.check_rounded, color: c.primary, size: 20),
           ],
         ),
       ),

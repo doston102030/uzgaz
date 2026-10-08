@@ -59,6 +59,4 @@ create policy "public read products" on public.products
 create index if not exists products_category_id_idx on public.products (category_id);
 create index if not exists products_company_id_idx on public.products (company_id);
 
--- No seed rows here on purpose — see catalog_setup.sql if you ever want
--- the demo data (Andijon Gaz Ta'minot, Asaka Energiya Servis, …) back for
--- testing.
+-- No demo rows are created by any setup script.

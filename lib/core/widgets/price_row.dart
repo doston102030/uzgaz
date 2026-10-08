@@ -100,3 +100,47 @@ class DashedDivider extends StatelessWidget {
     );
   }
 }
+
+/// Card price: bold tabular amount with a smaller "so'm" after it
+/// ("133 000 so'm"). Product, order and map cards all use it so prices
+/// read the same everywhere. Scales down rather than truncating.
+class PriceText extends StatelessWidget {
+  const PriceText(this.amount, {super.key, this.fontSize = 17, this.color});
+
+  final int amount;
+  final double fontSize;
+
+  /// Amount colour; defaults to the primary text colour.
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.palette;
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: AppFormatters.currencyShort(amount),
+              style: AppTypography.price.copyWith(
+                fontSize: fontSize,
+                color: color ?? c.textPrimary,
+              ),
+            ),
+            TextSpan(
+              text: " so'm",
+              style: AppTypography.caption.copyWith(
+                fontSize: fontSize * 0.72,
+                color: c.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        maxLines: 1,
+      ),
+    );
+  }
+}

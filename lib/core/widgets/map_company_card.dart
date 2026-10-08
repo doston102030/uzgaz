@@ -6,14 +6,18 @@ import '../../app/theme/typography.dart';
 import '../../features/companies/domain/entities/company.dart';
 import '../utils/formatters.dart';
 import 'app_button.dart';
-import 'app_segmented_control.dart';
 import 'app_surface.dart';
 import 'company_card.dart';
+import 'price_row.dart';
 import 'rating_widget.dart';
 
 /// Card in the horizontal carousel that floats over the map. Keeps the
 /// map readable: one company, the three numbers that decide a purchase,
 /// and a single action.
+///
+/// The carousel hands it a fixed-height slot, so the three rows spread
+/// evenly across whatever height it gets instead of bunching at the top;
+/// with loose constraints it shrinks to its content.
 class MapCompanyCard extends StatelessWidget {
   const MapCompanyCard({
     super.key,
@@ -38,15 +42,16 @@ class MapCompanyCard extends StatelessWidget {
       selected: selected,
       elevation: AppElevation.md,
       width: width,
-      padding: const EdgeInsets.all(AppDimensions.space12),
+      padding: const EdgeInsets.all(AppDimensions.space14),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              CompanyLogo(name: company.name, size: 40),
-              const SizedBox(width: AppDimensions.space10),
+              CompanyLogo(name: company.name, size: 44),
+              const SizedBox(width: AppDimensions.space12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,45 +60,62 @@ class MapCompanyCard extends StatelessWidget {
                       company.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTypography.callout.copyWith(
+                      style: AppTypography.headline.copyWith(
                         color: c.textPrimary,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
                       ),
                     ),
                     const SizedBox(height: 2),
-                    RatingWidget(
-                      rating: company.rating,
-                      reviewCount: company.reviewCount,
-                      size: 11,
+                    Row(
+                      children: [
+                        RatingWidget(
+                          rating: company.rating,
+                          reviewCount: company.reviewCount,
+                          size: 12,
+                        ),
+                        const SizedBox(width: AppDimensions.space8),
+                        _OpenStatus(open: company.isAvailable),
+                      ],
                     ),
                   ],
                 ),
               ),
-              AppPill(
-                label: company.isAvailable ? 'Ochiq' : 'Yopiq',
-                tone: company.isAvailable ? PillTone.success : PillTone.neutral,
-                dense: true,
-              ),
             ],
           ),
           const SizedBox(height: AppDimensions.space10),
-          Row(
-            children: [
-              _MiniStat(
-                icon: Icons.route_rounded,
-                label: AppFormatters.distance(company.distanceKm),
-              ),
-              const SizedBox(width: AppDimensions.space12),
-              _MiniStat(
-                icon: Icons.schedule_rounded,
-                label: AppFormatters.eta(company.etaMinutes),
-              ),
-              const SizedBox(width: AppDimensions.space12),
-              _MiniStat(
-                icon: Icons.access_time_rounded,
-                label: company.workingHours,
-              ),
-            ],
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.space8,
+              vertical: AppDimensions.space8,
+            ),
+            decoration: BoxDecoration(
+              color: c.isDark ? c.surfaceMuted : c.background,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusXSmall + 2),
+            ),
+            // Evenly spread; the hours slot is wider because "08:00–22:00"
+            // is the longest figure.
+            child: Row(
+              children: [
+                _MiniStat(
+                  icon: Icons.near_me_rounded,
+                  label: AppFormatters.distance(company.distanceKm),
+                  flex: 2,
+                ),
+                const _StatDivider(),
+                _MiniStat(
+                  icon: Icons.local_shipping_outlined,
+                  label: AppFormatters.eta(company.etaMinutes),
+                  flex: 2,
+                ),
+                const _StatDivider(),
+                _MiniStat(
+                  icon: Icons.access_time_rounded,
+                  // "08:00 - 22:00" -> "08:00–22:00": same info, narrower.
+                  label: company.workingHours.replaceAll(RegExp(r'\s*-\s*'), '–'),
+                  flex: 3,
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: AppDimensions.space10),
           Row(
@@ -102,19 +124,27 @@ class MapCompanyCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      AppFormatters.currency(company.productPrice),
-                      style: AppTypography.priceSmall.copyWith(color: c.textPrimary),
-                    ),
+                    PriceText(company.productPrice),
+                    const SizedBox(height: 1),
                     Text(
                       company.deliveryFee == 0
                           ? 'Yetkazish bepul'
                           : '+ ${AppFormatters.currencyShort(company.deliveryFee)} yetkazish',
-                      style: AppTypography.caption2.copyWith(color: c.textTertiary),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.caption.copyWith(
+                        color: company.deliveryFee == 0
+                            ? c.success
+                            : c.textSecondary,
+                        fontWeight: company.deliveryFee == 0
+                            ? FontWeight.w600
+                            : FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: AppDimensions.space8),
               AppButton(
                 label: 'Tanlash',
                 size: AppButtonSize.small,
@@ -129,31 +159,85 @@ class MapCompanyCard extends StatelessWidget {
   }
 }
 
-class _MiniStat extends StatelessWidget {
-  const _MiniStat({required this.icon, required this.label});
+/// "● Ochiq" / "● Yopiq" — sits beside the rating so the company name
+/// gets the card's full width.
+class _OpenStatus extends StatelessWidget {
+  const _OpenStatus({required this.open});
 
-  final IconData icon;
-  final String label;
+  final bool open;
 
   @override
   Widget build(BuildContext context) {
     final c = context.palette;
-    return Flexible(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13, color: c.textTertiary),
-          const SizedBox(width: 3),
-          Flexible(
-            child: Text(
+    final color = open ? c.success : c.textTertiary;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          open ? 'Ochiq' : 'Yopiq',
+          style: AppTypography.caption.copyWith(
+            color: color,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// One figure in the stats strip, centred in its [flex] share of the row.
+/// Scales down rather than cutting off — working hours must stay readable
+/// in full.
+class _MiniStat extends StatelessWidget {
+  const _MiniStat({required this.icon, required this.label, this.flex = 1});
+
+  final IconData icon;
+  final String label;
+  final int flex;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.palette;
+    return Expanded(
+      flex: flex,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: c.primary),
+            const SizedBox(width: 4),
+            Text(
               label,
               maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTypography.caption2.copyWith(color: c.textSecondary),
+              style: AppTypography.caption.copyWith(
+                color: c.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _StatDivider extends StatelessWidget {
+  const _StatDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 14,
+      margin: const EdgeInsets.symmetric(horizontal: AppDimensions.space6),
+      color: context.palette.borderStrong,
     );
   }
 }

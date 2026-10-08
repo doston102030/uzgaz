@@ -11,6 +11,7 @@ import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/dimensions.dart';
 import '../../../../app/theme/motion.dart';
 import '../../../../app/theme/typography.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_segmented_control.dart';
 import '../../../../core/widgets/app_tappable.dart';

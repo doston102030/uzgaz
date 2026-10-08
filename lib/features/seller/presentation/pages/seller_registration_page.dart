@@ -12,6 +12,7 @@ import '../../../../core/widgets/app_image_picker_field.dart';
 import '../../../../core/widgets/app_nav_bar.dart';
 import '../../../../core/widgets/app_select_field.dart';
 import '../../../../core/widgets/app_surface.dart';
+import '../../../../core/widgets/app_switch.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/custom_dialog.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -320,7 +321,7 @@ class _ToggleRow extends StatelessWidget {
               style: AppTypography.callout.copyWith(color: c.textPrimary),
             ),
           ),
-          Switch.adaptive(value: value, onChanged: onChanged),
+          AppSwitch(value: value, onChanged: onChanged),
         ],
       ),
     );

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -8,6 +7,7 @@ import '../../../../app/theme/dimensions.dart';
 import '../../../../app/theme/typography.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/utils/haptics.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_surface.dart';
 import '../../../checkout/presentation/providers/checkout_provider.dart';
@@ -30,7 +30,7 @@ class _OrderConfirmationPageState extends ConsumerState<OrderConfirmationPage>
   @override
   void initState() {
     super.initState();
-    HapticFeedback.heavyImpact();
+    AppHaptics.success();
   }
 
   @override

@@ -146,7 +146,7 @@ class _AppTextFieldState extends State<AppTextField> {
                             color: _focused ? c.primary : c.textTertiary,
                           ),
                         ),
-                      if (widget.prefixText != null)
+                      if (widget.prefixText != null) ...[
                         Padding(
                           padding: const EdgeInsets.only(left: AppDimensions.space16),
                           child: Text(
@@ -157,6 +157,13 @@ class _AppTextFieldState extends State<AppTextField> {
                             ),
                           ),
                         ),
+                        Container(
+                          width: 1,
+                          height: 22,
+                          margin: const EdgeInsets.only(left: AppDimensions.space12),
+                          color: c.borderStrong,
+                        ),
+                      ],
                       Expanded(
                         child: TextField(
                           controller: widget.controller,

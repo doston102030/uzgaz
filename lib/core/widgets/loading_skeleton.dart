@@ -3,6 +3,7 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../app/theme/colors.dart';
 import '../../app/theme/dimensions.dart';
+import 'responsive_product_grid.dart';
 
 /// Shimmering placeholder block. Skeletons below mirror the real layout
 /// exactly so nothing shifts when data lands.
@@ -43,8 +44,9 @@ class ProductCardSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.palette;
+    // Mirrors ProductCard: edge-to-edge photo, then name / seller / price.
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.space10),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: c.surface,
         borderRadius: AppDimensions.brLarge,
@@ -53,20 +55,31 @@ class ProductCardSkeleton extends StatelessWidget {
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          LoadingSkeleton(
-            height: AppDimensions.productImageHeight,
-            radius: AppDimensions.radiusSmall,
-          ),
-          SizedBox(height: AppDimensions.space10),
-          LoadingSkeleton(height: 14, width: 110),
-          SizedBox(height: AppDimensions.space8),
-          LoadingSkeleton(height: 11, width: 70),
-          Spacer(),
-          Row(
-            children: [
-              Expanded(child: LoadingSkeleton(height: 18, width: 80)),
-              LoadingSkeleton(height: 34, width: 34, radius: 12),
-            ],
+          LoadingSkeleton(height: AppDimensions.productImageHeight, radius: 0),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppDimensions.space12,
+                AppDimensions.space12,
+                AppDimensions.space10,
+                AppDimensions.space12,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  LoadingSkeleton(height: 14, width: 110),
+                  SizedBox(height: AppDimensions.space8),
+                  LoadingSkeleton(height: 11, width: 70),
+                  Spacer(),
+                  Row(
+                    children: [
+                      Expanded(child: LoadingSkeleton(height: 18, width: 80)),
+                      LoadingSkeleton(height: 36, width: 36, radius: 18),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -162,18 +175,15 @@ class ProductGridSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
+    return LayoutBuilder(builder: (context, constraints) => GridView.builder(
       padding: AppDimensions.pagePadding,
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: AppDimensions.space12,
-        crossAxisSpacing: AppDimensions.space12,
-        childAspectRatio: 0.63,
+      gridDelegate: productGridDelegate(
+        context, constraints.maxWidth - AppDimensions.gutter * 2,
       ),
       itemCount: count,
       itemBuilder: (context, _) => const ProductCardSkeleton(),
-    );
+    ));
   }
 }

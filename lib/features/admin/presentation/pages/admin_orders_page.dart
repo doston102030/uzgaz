@@ -55,7 +55,6 @@ class _AdminOrdersPageState extends ConsumerState<AdminOrdersPage> {
           AppSliverNavBar(
             title: 'Buyurtmalar',
             subtitle: '${orders.length} ta topildi',
-            showBack: false,
           ),
           SliverToBoxAdapter(
             child: Padding(

@@ -82,7 +82,7 @@ export function Sidebar() {
 
       <div className="m-3 rounded-2xl border border-border bg-surface-muted p-4">
         <p className="text-xs font-semibold text-foreground/70">
-          {status?.company_name ?? "Yuklanmoqda..."}
+          {status?.company_name ?? "Sotuvchi hisobi ulanmagan"}
         </p>
         <p className="mt-1 text-xs text-foreground/50">
           {status ? STATUS_TEXT[status.status] : ""}

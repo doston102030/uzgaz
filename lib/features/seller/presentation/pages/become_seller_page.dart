@@ -15,9 +15,8 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/seller_provider.dart';
 
 /// Entry point behind "Men sotuvchiman" — pitches the marketplace, and
-/// if this account already owns a company (an earlier application, or
-/// the pre-seeded demo company), offers to jump straight into it instead
-/// of filling the form again.
+/// if this account already owns a company from an earlier application,
+/// offers to jump straight into it instead of filling the form again.
 class BecomeSellerPage extends ConsumerWidget {
   const BecomeSellerPage({super.key});
 

@@ -24,8 +24,9 @@ boshqa portda).
 
 ## Holati
 
-Hozircha **namunaviy (mock) ma'lumotlar** bilan ishlaydi (`lib/mock-data.ts`) —
-"Andijon Gaz Ta'minot" nomli namunaviy sotuvchi hisobi bilan. Supabase
-bazasiga hali ulanmagan — bu keyingi bosqich (sotuvchi autentifikatsiyasi
-va faqat o'z mahsulot/buyurtmalariga yozish huquqini beruvchi RLS
-siyosatlari kerak bo'ladi).
+Demo sotuvchi, buyurtmalar va tushumlar olib tashlangan. Mahsulotlar va
+sotuvchi holati Supabase'dan olinadi. Haqiqiy sotuvchi tanlash uchun
+`.env.local` ichida `NEXT_PUBLIC_SELLER_ID` belgilanadi; standart demo ID yo'q.
+Bu sozlama autentifikatsiya o'rnini bosmaydi. Profilni saqlash va buyurtmalar
+backend'i hali ulanmagan; ular bo'sh boshlanadi. Sotuvchi autentifikatsiyasi
+va egalikni tekshiruvchi RLS siyosatlari alohida ish sifatida qoladi.

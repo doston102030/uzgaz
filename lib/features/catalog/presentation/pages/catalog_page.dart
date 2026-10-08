@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/dimensions.dart';
+import '../../../../app/theme/motion.dart';
 import '../../../../app/theme/typography.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -14,6 +15,8 @@ import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/custom_dialog.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/product_card.dart';
+import '../../../../core/widgets/category_filter_bar.dart';
+import '../../../../core/widgets/responsive_product_grid.dart';
 import '../../../cart/presentation/providers/cart_provider.dart';
 import '../../../products/presentation/providers/product_provider.dart';
 
@@ -39,14 +42,17 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     final selected = await AppSheet.show<ProductSort>(
       context,
       title: 'Saralash',
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      subtitle: 'Mahsulotlar qaysi tartibda ko‘rinsin?',
+      child: AppSheetOptionList(
         children: [
           for (final sort in ProductSort.values)
-            _SortRow(
+            AppSheetOption(
               label: sort.label,
+              subtitle: sort.hint,
+              icon: sort.icon,
+              iconColor: sort.color,
               selected: sort == current,
-              onTap: () => Navigator.of(context).pop(sort),
+              onTap: () => Navigator.of(context, rootNavigator: true).pop(sort),
             ),
         ],
       ),
@@ -63,6 +69,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     final category = ref.watch(categoryFilterProvider);
     final counts = ref.watch(categoryCountsProvider);
     final sort = ref.watch(productSortProvider);
+    final cartCount = ref.watch(cartCountProvider);
     // Products load from Supabase now — an empty list right after launch
     // means "still loading", not "no results", so don't show the
     // no-matches empty state (with its "clear filters" action) for that.
@@ -74,11 +81,11 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
           AppSliverNavBar(
             title: 'Katalog',
             subtitle: '${products.length} ta mahsulot topildi',
-            showBack: false,
             actions: [
               AppIconButton(
-                icon: Icons.swap_vert_rounded,
-                onTap: _openSort,
+                icon: Icons.shopping_bag_outlined,
+                badgeCount: cartCount,
+                onTap: () => context.push('/cart'),
               ),
             ],
           ),
@@ -110,36 +117,12 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             ),
           ),
           SliverPinnedBar(
-            height: AppDimensions.chipHeight + 14,
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: SizedBox(
-                height: AppDimensions.chipHeight + 4,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: AppDimensions.pagePadding,
-                  children: [
-                    AppChip(
-                      label: 'Barchasi',
-                      selected: category == null,
-                      onTap: () =>
-                          ref.read(categoryFilterProvider.notifier).state = null,
-                    ),
-                    for (final item in ServiceCategory.values)
-                      Padding(
-                        padding: const EdgeInsets.only(left: AppDimensions.space8),
-                        child: AppChip(
-                          label: '${item.titleUz} · ${counts[item] ?? 0}',
-                          icon: item.icon,
-                          selected: category == item,
-                          onTap: () => ref
-                              .read(categoryFilterProvider.notifier)
-                              .state = item,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
+            height: CategoryFilterBar.heightFor(context),
+            child: CategoryFilterBar(
+              selected: category,
+              counts: counts,
+              onSelected: (value) =>
+                  ref.read(categoryFilterProvider.notifier).state = value,
             ),
           ),
           SliverToBoxAdapter(
@@ -150,33 +133,29 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                 AppDimensions.gutter,
                 AppDimensions.space12,
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      category == null
-                          ? 'Barcha mahsulotlar'
-                          : category.titleUz,
-                      style: AppTypography.headline.copyWith(color: c.textPrimary),
+              child: LayoutBuilder(
+                builder: (context, box) => Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        category == null
+                            ? 'Barcha mahsulotlar'
+                            : category.titleUz,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.headline
+                            .copyWith(color: c.textPrimary),
+                      ),
                     ),
-                  ),
-                  AppTappable(
-                    onTap: _openSort,
-                    child: Row(
-                      children: [
-                        Icon(Icons.swap_vert_rounded, size: 16, color: c.primary),
-                        const SizedBox(width: 4),
-                        Text(
-                          sort.label,
-                          style: AppTypography.caption.copyWith(
-                            color: c.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+                    const SizedBox(width: AppDimensions.space12),
+                    // Natural width, capped so a narrow screen with big
+                    // text shortens the label instead of overflowing.
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: box.maxWidth * .6),
+                      child: _SortButton(sort: sort, onTap: _openSort),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -210,13 +189,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                 AppDimensions.gutter,
                 AppDimensions.bottomBarClearance,
               ),
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: AppDimensions.space12,
-                  crossAxisSpacing: AppDimensions.space12,
-                  childAspectRatio: 0.60,
-                ),
+              sliver: ResponsiveProductGrid(
                 delegate: SliverChildBuilderDelegate(
                   (context, i) {
                     final product = products[i];
@@ -249,41 +222,89 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   }
 }
 
-class _SortRow extends StatelessWidget {
-  const _SortRow({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
+/// How each sort order presents itself in the picker sheet.
+extension _ProductSortPresentation on ProductSort {
+  String get hint => switch (this) {
+        ProductSort.tavsiya => 'Eng mos takliflar birinchi',
+        ProductSort.arzon => 'Narx o‘sish tartibida',
+        ProductSort.qimmat => 'Narx kamayish tartibida',
+        ProductSort.reyting => 'Eng yuqori baholanganlar birinchi',
+      };
 
-  final String label;
-  final bool selected;
+  IconData get icon => switch (this) {
+        ProductSort.tavsiya => Icons.auto_awesome_rounded,
+        ProductSort.arzon => Icons.trending_down_rounded,
+        ProductSort.qimmat => Icons.trending_up_rounded,
+        ProductSort.reyting => Icons.star_rounded,
+      };
+
+  Color get color => switch (this) {
+        ProductSort.tavsiya => AppColors.primary,
+        ProductSort.arzon => AppColors.success,
+        ProductSort.qimmat => AppColors.energyFlame,
+        ProductSort.reyting => AppColors.energyAmber,
+      };
+}
+
+/// The catalogue's single sort control: a pill showing the active order.
+/// Turns primary-tinted once the user leaves the default, so a non-default
+/// ordering is never invisible.
+class _SortButton extends StatelessWidget {
+  const _SortButton({required this.sort, required this.onTap});
+
+  final ProductSort sort;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final c = context.palette;
-    return AppTappable(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.gutter,
-          vertical: AppDimensions.space16,
-        ),
-        color: Colors.transparent,
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                style: AppTypography.body.copyWith(
-                  color: c.textPrimary,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+    final active = sort != ProductSort.tavsiya;
+    final fg = active ? c.primary : c.textPrimary;
+
+    return Semantics(
+      button: true,
+      label: 'Saralash: ${sort.label}',
+      excludeSemantics: true,
+      child: AppTappable(
+        onTap: onTap,
+        pressedScale: 0.95,
+        child: AnimatedContainer(
+          duration: AppMotion.fast,
+          curve: AppMotion.standard,
+          height: 34,
+          padding: const EdgeInsets.only(
+            left: AppDimensions.space10,
+            right: AppDimensions.space8,
+          ),
+          decoration: BoxDecoration(
+            color: active ? c.primarySoft : c.surface,
+            borderRadius: AppDimensions.brPill,
+            border: Border.all(
+              color: active ? c.primary.withValues(alpha: 0.35) : c.border,
+            ),
+            boxShadow: active ? null : c.shadowSm,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.swap_vert_rounded, size: 16, color: c.primary),
+              const SizedBox(width: AppDimensions.space4),
+              Flexible(
+                child: Text(
+                  sort.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.caption.copyWith(
+                    color: fg,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
-            if (selected) Icon(Icons.check_rounded, color: c.primary, size: 20),
-          ],
+              const SizedBox(width: 2),
+              Icon(Icons.keyboard_arrow_down_rounded,
+                  size: 18, color: c.textSecondary),
+            ],
+          ),
         ),
       ),
     );

@@ -8,6 +8,8 @@ Future<List<Company>> fetchCompanies() async {
   final rows = await SupabaseService.client
       .from('companies')
       .select()
+      // Retired demo IDs; also excluded while the database cleanup is pending.
+      .not('id', 'in', '(c1,c2,c3,c4,c5,c6)')
       .order('rating', ascending: false);
 
   return rows.map(_companyFromRow).toList();

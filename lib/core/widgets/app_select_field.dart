@@ -4,6 +4,7 @@ import '../../app/theme/colors.dart';
 import '../../app/theme/dimensions.dart';
 import '../../app/theme/typography.dart';
 import 'app_tappable.dart';
+import 'custom_dialog.dart';
 
 /// A tap-to-pick field styled exactly like [AppTextField] — used for
 /// category / working-hours / other choice inputs on the seller forms so
@@ -109,6 +110,9 @@ class AppPickerSheet<T> extends StatelessWidget {
   final T? selected;
   final IconData? Function(T)? iconOf;
 
+  /// Opens through [AppSheet], so it gets the same title row, close
+  /// button, option rows and root-navigator placement (above the tab bar)
+  /// as every other picker.
   static Future<T?> show<T>(
     BuildContext context, {
     required String title,
@@ -117,85 +121,31 @@ class AppPickerSheet<T> extends StatelessWidget {
     T? selected,
     IconData? Function(T)? iconOf,
   }) {
-    return showModalBottomSheet<T>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: context.palette.surface,
-      barrierColor: context.palette.scrim,
-      builder: (context) {
-        final c = context.palette;
-        return SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppDimensions.gutter,
-                  AppDimensions.space4,
-                  AppDimensions.gutter,
-                  AppDimensions.space8,
-                ),
-                child: Text(
-                  title,
-                  style: AppTypography.title3.copyWith(color: c.textPrimary),
-                ),
-              ),
-              Flexible(
-                child: AppPickerSheet<T>(
-                  options: options,
-                  labelOf: labelOf,
-                  selected: selected,
-                  iconOf: iconOf,
-                ),
-              ),
-              const SizedBox(height: AppDimensions.space8),
-            ],
-          ),
-        );
-      },
+    return AppSheet.show<T>(
+      context,
+      title: title,
+      child: AppPickerSheet<T>(
+        options: options,
+        labelOf: labelOf,
+        selected: selected,
+        iconOf: iconOf,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final c = context.palette;
-    return ListView.builder(
-      shrinkWrap: true,
-      itemCount: options.length,
-      itemBuilder: (context, i) {
-        final option = options[i];
-        final isSelected = option == selected;
-        return AppTappable(
-          onTap: () => Navigator.of(context).pop(option),
-          child: Container(
-            color: Colors.transparent,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.gutter,
-              vertical: AppDimensions.space14,
-            ),
-            child: Row(
-              children: [
-                if (iconOf != null && iconOf!(option) != null) ...[
-                  Icon(iconOf!(option), size: 19, color: c.textSecondary),
-                  const SizedBox(width: AppDimensions.space12),
-                ],
-                Expanded(
-                  child: Text(
-                    labelOf(option),
-                    style: AppTypography.body.copyWith(
-                      color: c.textPrimary,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    ),
-                  ),
-                ),
-                if (isSelected) Icon(Icons.check_rounded, color: c.primary, size: 20),
-              ],
-            ),
+    // `context` sits inside the sheet route, so this pops the sheet.
+    return AppSheetOptionList(
+      children: [
+        for (final option in options)
+          AppSheetOption(
+            label: labelOf(option),
+            icon: iconOf?.call(option),
+            selected: option == selected,
+            onTap: () => Navigator.of(context).pop(option),
           ),
-        );
-      },
+      ],
     );
   }
 }

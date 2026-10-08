@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../app/theme/colors.dart';
 import '../../app/theme/dimensions.dart';
@@ -126,10 +125,8 @@ class AppChoiceChips<T> extends StatelessWidget {
             label: labelOf?.call(item) ?? '$item',
             icon: iconOf?.call(item),
             selected: item == value,
-            onTap: () {
-              HapticFeedback.selectionClick();
-              onChanged(item);
-            },
+            // AppChip's AppTappable already buzzes on tap.
+            onTap: () => onChanged(item),
           );
         },
       ),
@@ -230,6 +227,14 @@ class AppPill extends StatelessWidget {
       PillTone.flame => (AppColors.energyFlame, c.tint(AppColors.energyFlame)),
     };
 
+    // A filled pill paints the tone colour itself as the background, and the
+    // dark palette's tones are bright (amber, mint, sky) — white on them is
+    // unreadable. Flip the label to ink whenever the fill is light.
+    final Color onFilled =
+        ThemeData.estimateBrightnessForColor(fg) == Brightness.dark
+            ? AppColors.white
+            : AppColors.darkNavy;
+
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: dense ? 7 : 9,
@@ -243,7 +248,7 @@ class AppPill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: dense ? 11 : 13, color: filled ? Colors.white : fg),
+            Icon(icon, size: dense ? 11 : 13, color: filled ? onFilled : fg),
             const SizedBox(width: 4),
           ],
           Flexible(
@@ -252,7 +257,7 @@ class AppPill extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: (dense ? AppTypography.caption2 : AppTypography.caption).copyWith(
-                color: filled ? Colors.white : fg,
+                color: filled ? onFilled : fg,
                 fontWeight: FontWeight.w700,
               ),
             ),

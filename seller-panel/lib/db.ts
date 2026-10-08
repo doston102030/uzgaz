@@ -1,13 +1,8 @@
 import { supabase } from "./supabase";
 import { ModerationStatus, SellerProduct, ServiceCategory } from "./types";
 
-/**
- * Demo bosqichida sotuvchi paneli haqiqiy login qilmaydi (Supabase Auth
- * hali ulanmagan) — shuning uchun bitta qattiq belgilangan sotuvchi/
- * kompaniya identifikatoriga ("c1") bog'lanadi. Bu ID admin panelning
- * `sellers` va `companies` jadvalidagi id bilan bir xil.
- */
-export const SELLER_ID = "c1";
+// Sotuvchi tanlanmaguncha demo hisobga avtomatik ulanmaydi.
+export const SELLER_ID = process.env.NEXT_PUBLIC_SELLER_ID?.trim() || "";
 
 // ── Sotuvchi holati (status) ──────────────────────────────────────
 
@@ -18,6 +13,7 @@ export interface SellerStatusRow {
 }
 
 export async function fetchSellerStatus(): Promise<SellerStatusRow> {
+  if (!SELLER_ID) throw new Error("Sotuvchi hisobi hali ulanmagan.");
   const { data, error } = await supabase
     .from("sellers")
     .select("status, company_name, owner_name")
@@ -64,6 +60,7 @@ function productFromRow(row: ProductRow): SellerProduct {
 }
 
 export async function fetchSellerProducts(): Promise<SellerProduct[]> {
+  if (!SELLER_ID) return [];
   const { data, error } = await supabase
     .from("products")
     .select(
@@ -90,6 +87,8 @@ export async function insertSellerProduct(
   input: ProductInput,
   companyName: string,
 ): Promise<SellerProduct> {
+  if (!SELLER_ID) throw new Error("Sotuvchi hisobi hali ulanmagan.");
+  await fetchSellerStatus();
   const id = `sp${Date.now()}`;
   const { data, error } = await supabase
     .from("products")

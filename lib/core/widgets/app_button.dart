@@ -153,13 +153,21 @@ class AppButton extends StatelessWidget {
             gradient: _disabled && variant == AppButtonVariant.primary ? null : gradient,
             borderRadius: BorderRadius.circular(_radius),
             border: border != null ? Border.all(color: border) : null,
+            // Small buttons sit inside cards — a full-size glow there
+            // outweighs the card itself, so they get a tighter, softer one.
             boxShadow: variant == AppButtonVariant.primary && !_disabled
                 ? [
-                    BoxShadow(
-                      color: c.primary.withValues(alpha: c.isDark ? 0.32 : 0.28),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
+                    size == AppButtonSize.small
+                        ? BoxShadow(
+                            color: c.primary.withValues(alpha: c.isDark ? 0.26 : 0.22),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          )
+                        : BoxShadow(
+                            color: c.primary.withValues(alpha: c.isDark ? 0.32 : 0.28),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
                   ]
                 : null,
           ),
@@ -212,11 +220,10 @@ class AppIconButton extends StatelessWidget {
           Container(
             width: size,
             height: size,
-            decoration: BoxDecoration(
-              color: background ?? c.surface,
-              shape: BoxShape.circle,
-              border: bordered ? Border.all(color: c.border) : null,
-              boxShadow: c.shadowSm,
+            decoration: _roundButtonDecoration(
+              c,
+              fill: background ?? c.surface,
+              bordered: bordered,
             ),
             child: Icon(icon, size: iconSize, color: foreground ?? c.textPrimary),
           ),
@@ -253,4 +260,95 @@ class AppIconButton extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The page's way back: a round chip with a bold chevron, the same family
+/// as [AppIconButton] beside it. While pressed it tints blue and the
+/// chevron nudges left, the way it's about to go.
+class AppBackButton extends StatefulWidget {
+  const AppBackButton({super.key, required this.onTap, this.size = 40});
+
+  final VoidCallback onTap;
+  final double size;
+
+  @override
+  State<AppBackButton> createState() => _AppBackButtonState();
+}
+
+class _AppBackButtonState extends State<AppBackButton> {
+  bool _pressed = false;
+
+  void _press(bool value) {
+    if (_pressed != value) setState(() => _pressed = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.palette;
+    final motion = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : AppMotion.fast;
+    return Semantics(
+      button: true,
+      label: 'Orqaga',
+      excludeSemantics: true,
+      // A Listener sees the press without joining the gesture arena, so
+      // AppTappable still owns the tap.
+      child: Listener(
+        onPointerDown: (_) => _press(true),
+        onPointerUp: (_) => _press(false),
+        onPointerCancel: (_) => _press(false),
+        child: AppTappable(
+          onTap: widget.onTap,
+          pressedScale: 0.9,
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(end: _pressed ? 1 : 0),
+            duration: motion,
+            curve: AppMotion.standard,
+            builder: (context, t, _) => Container(
+              width: widget.size,
+              height: widget.size,
+              alignment: Alignment.center,
+              decoration: _roundButtonDecoration(
+                c,
+                fill: Color.lerp(c.surface, c.primarySoft, t)!,
+                bordered: true,
+              ),
+              child: Transform.translate(
+                // -1 centres the chevron optically; the press adds a nudge.
+                offset: Offset(-1 - 2.5 * t, 0),
+                child: Icon(
+                  Icons.chevron_left_rounded,
+                  size: widget.size * .7,
+                  color: Color.lerp(c.textPrimary, c.primary, t),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shared chrome of the round header buttons: a crisp hairline and a soft,
+/// slightly lifted shadow instead of a flat outline.
+BoxDecoration _roundButtonDecoration(
+  AppPalette c, {
+  required Color fill,
+  required bool bordered,
+}) {
+  return BoxDecoration(
+    color: fill,
+    shape: BoxShape.circle,
+    border: bordered ? Border.all(color: c.border.withValues(alpha: .85)) : null,
+    boxShadow: c.isDark
+        ? c.shadowSm
+        : const [
+            BoxShadow(
+                color: Color(0x120B1526), blurRadius: 14, offset: Offset(0, 4)),
+            BoxShadow(
+                color: Color(0x0A0B1526), blurRadius: 3, offset: Offset(0, 1)),
+          ],
+  );
 }

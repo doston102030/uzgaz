@@ -53,7 +53,6 @@ class _SellerProductsPageState extends ConsumerState<SellerProductsPage> {
           AppSliverNavBar(
             title: 'Mahsulotlar',
             subtitle: '${all.length} ta mahsulot',
-            showBack: false,
             actions: [
               AppIconButton(
                 icon: Icons.add_rounded,

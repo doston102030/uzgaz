@@ -112,9 +112,7 @@ class _NavBarDelegate extends SliverPersistentHeaderDelegate {
               if (showBack)
                 Padding(
                   padding: const EdgeInsets.only(left: AppDimensions.space12),
-                  child: AppIconButton(
-                    icon: Icons.arrow_back_ios_new_rounded,
-                    iconSize: 16,
+                  child: AppBackButton(
                     onTap: onBack ?? () => _pop(context),
                   ),
                 )
@@ -217,9 +215,28 @@ class _NavBarDelegate extends SliverPersistentHeaderDelegate {
     );
   }
 
+  static const _sellerTabs = {
+    '/seller/products',
+    '/seller/orders',
+    '/seller/reports',
+    '/seller/profile',
+  };
+
   static void _pop(BuildContext context) {
     if (context.canPop()) {
       context.pop();
+      return;
+    }
+    // A tab root has nothing to pop: "back" returns to the first tab of
+    // whichever shell (buyer, seller or admin) the page belongs to.
+    // Seller onboarding (/seller/start, /seller/register…) is not a tab,
+    // so it keeps falling back to the buyer home.
+    final path =
+        GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
+    if (_sellerTabs.contains(path)) {
+      context.go('/seller/dashboard');
+    } else if (path.startsWith('/admin/')) {
+      context.go('/admin/dashboard');
     } else {
       context.go('/home');
     }
@@ -232,7 +249,10 @@ class _NavBarDelegate extends SliverPersistentHeaderDelegate {
       old.topPadding != topPadding ||
       old.largeExtent != largeExtent ||
       old.showBack != showBack ||
-      old.actions.length != actions.length;
+      old.onBack != onBack ||
+      // A fresh list means the page rebuilt — its actions may carry new
+      // state (e.g. the cart badge count) even at the same length.
+      old.actions != actions;
 }
 
 /// A row (filter chips, segmented control) that sticks under the nav bar

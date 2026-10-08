@@ -7,7 +7,9 @@ import '../../domain/entities/product.dart';
 Future<List<Product>> fetchProducts() async {
   final rows = await SupabaseService.client
       .from('products')
-      .select()
+      // The seller's current name. `company_name` is a copy taken when the
+      // product was added and goes stale once the company is renamed.
+      .select('*, company:companies(name)')
       .eq('moderation_status', 'approved')
       .order('created_at');
 
@@ -26,7 +28,8 @@ Product _productFromRow(Map<String, dynamic> row) {
     isAvailable: row['is_available'] as bool,
     isPopular: row['is_popular'] as bool,
     companyId: (row['company_id'] as String?) ?? '',
-    companyName: row['company_name'] as String,
+    companyName: ((row['company'] as Map?)?['name'] as String?) ??
+        row['company_name'] as String,
     categoryId: row['category_id'] as String,
     description: row['description'] as String?,
     unit: (row['unit'] as String?) ?? 'dona',

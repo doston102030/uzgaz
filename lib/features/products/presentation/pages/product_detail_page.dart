@@ -71,11 +71,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
             leading: Padding(
               padding: const EdgeInsets.only(left: AppDimensions.gutter),
               child: Center(
-                child: AppIconButton(
-                  icon: Icons.arrow_back_ios_new_rounded,
-                  iconSize: 16,
-                  onTap: () => context.pop(),
-                ),
+                child: AppBackButton(onTap: () => context.pop()),
               ),
             ),
             actions: [
@@ -95,47 +91,41 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
               const SizedBox(width: AppDimensions.gutter),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              background: product.imageUrl.startsWith('http')
-                  ? Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        CachedNetworkImage(
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      visual.accent.withValues(alpha: c.isDark ? 0.28 : 0.16),
+                      c.background,
+                    ],
+                  ),
+                ),
+                child: product.imageUrl.startsWith('http')
+                    // `contain` — the whole product stays in frame. `cover`
+                    // cropped a tall cylinder down to its middle band.
+                    ? Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          AppDimensions.gutter,
+                          MediaQuery.paddingOf(context).top + 48,
+                          AppDimensions.gutter,
+                          AppDimensions.space16,
+                        ),
+                        child: CachedNetworkImage(
                           imageUrl: product.imageUrl,
-                          fit: BoxFit.cover,
-                          placeholder: (_, __) => ProductIllustration(visual: visual),
-                          errorWidget: (_, __, ___) => ProductIllustration(visual: visual),
+                          fit: BoxFit.contain,
+                          placeholder: (_, __) =>
+                              ProductIllustration(visual: visual, showStage: false),
+                          errorWidget: (_, __, ___) =>
+                              ProductIllustration(visual: visual, showStage: false),
                         ),
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                c.background.withValues(alpha: 0.9),
-                              ],
-                              stops: const [0.6, 1],
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            visual.accent.withValues(alpha: c.isDark ? 0.28 : 0.16),
-                            c.background,
-                          ],
-                        ),
-                      ),
-                      child: Padding(
+                      )
+                    : Padding(
                         padding: const EdgeInsets.only(top: 40),
                         child: ProductIllustration(visual: visual, showStage: false),
                       ),
-                    ),
+              ),
             ),
           ),
           SliverToBoxAdapter(

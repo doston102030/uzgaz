@@ -23,7 +23,7 @@ const ORDER_TONE: Record<SellerOrderStatus, BadgeTone> = {
 
 export default function DashboardPage() {
   const [products, setProducts] = useState<SellerProduct[]>([]);
-  const [companyName, setCompanyName] = useState("...");
+  const [companyName, setCompanyName] = useState("Sotuvchi paneli");
 
   useEffect(() => {
     let cancelled = false;
@@ -76,7 +76,6 @@ export default function DashboardPage() {
             value={formatCurrencyShort(periodRevenue)}
             icon={Wallet}
             tone="success"
-            trend={{ value: "6% o'sish", positive: true }}
           />
           <StatCard
             label="Faol mahsulotlar"

@@ -26,7 +26,7 @@ import clsx from "clsx";
 const MAX_IMAGES = 3;
 
 const CATALOG =
-  "https://haurszcvivpqdyenfwbb.supabase.co/storage/v1/object/public/product-images/catalog";
+  "https://xasjpasaatswhxmgvvsg.supabase.co/storage/v1/object/public/product-images/catalog";
 
 const TABS: { key: ModerationStatus | "all"; label: string }[] = [
   { key: "all", label: "Barchasi" },

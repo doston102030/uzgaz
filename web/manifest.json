@@ -1,11 +1,11 @@
 {
-    "name": "gaz_energiya",
-    "short_name": "gaz_energiya",
+    "name": "Gaz & Energiya",
+    "short_name": "Gaz & Energiya",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FFFFFF",
+    "theme_color": "#2563EB",
+    "description": "Energiya — bir necha tegishda",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

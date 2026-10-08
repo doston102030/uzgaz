@@ -145,16 +145,30 @@ void main() {
     final container = ProviderContainer();
     addTearDown(container.dispose);
 
-    // u1 is the mock buyer created by signInWithPhone; s1 ("UzGaz Servis")
-    // is the pre-seeded, already-approved demo company owned by u1 — this
-    // exercises the full seller shell without going through registration.
+    // Register the test seller explicitly; production starts empty.
     // signInWithPhone has a mock `Future.delayed` inside it — awaiting it
     // directly would hang forever under the fake-async test clock, so it
     // runs in a real async zone via `runAsync`.
     await tester.runAsync(
       () => container.read(authProvider.notifier).signInWithPhone('+998901234567'),
     );
-    container.read(authProvider.notifier).linkSeller('s1');
+    expect(container.read(sellerProfilesProvider), isEmpty);
+    expect(container.read(sellerProductsProvider), isEmpty);
+    expect(container.read(sellerOrdersProvider), isEmpty);
+    final seller = container.read(sellerProfilesProvider.notifier).apply(
+      ownerUserId: container.read(authProvider)!.id,
+      companyName: 'UzGaz Servis',
+      category: ServiceCategory.gazBallon,
+      description: 'Test firmasi',
+      address: 'Andijon',
+      phone: '+998901234567',
+      workingHours: '09:00 - 18:00',
+      deliveryFee: 0,
+      offersDelivery: true,
+      offersPickup: true,
+    );
+    container.read(sellerProfilesProvider.notifier).approve(seller.id);
+    container.read(authProvider.notifier).linkSeller(seller.id);
 
     expect(container.read(currentSellerProvider)?.companyName, 'UzGaz Servis');
 

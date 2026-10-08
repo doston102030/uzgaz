@@ -65,12 +65,14 @@ class ServiceCard extends StatelessWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: AppTypography.headline.copyWith(color: c.textPrimary),
+                        style: AppTypography.headline
+                            .copyWith(color: c.textPrimary),
                       ),
                     ),
                     if (badge != null) ...[
                       const SizedBox(width: AppDimensions.space6),
-                      AppPill(label: badge!, tone: PillTone.success, dense: true),
+                      AppPill(
+                          label: badge!, tone: PillTone.success, dense: true),
                     ],
                   ],
                 ),
@@ -79,7 +81,8 @@ class ServiceCard extends StatelessWidget {
                   subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTypography.footnote.copyWith(color: c.textSecondary),
+                  style:
+                      AppTypography.footnote.copyWith(color: c.textSecondary),
                 ),
               ],
             ),
@@ -93,99 +96,6 @@ class ServiceCard extends StatelessWidget {
           ],
           Icon(Icons.chevron_right_rounded, color: c.textTertiary, size: 20),
         ],
-      ),
-    );
-  }
-}
-
-/// Square category tile for the horizontal rail on Home.
-class ServiceTile extends StatelessWidget {
-  const ServiceTile({
-    super.key,
-    required this.label,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-    this.photoUrl,
-  });
-
-  final String label;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  /// Real photo shown inside the circle instead of the plain icon glyph
-  /// (see [ServiceCategoryX.photoUrl]) — falls back to the icon tile below
-  /// while it loads, and again if it fails, same resilient pattern
-  /// [ProductCard] uses for product photos.
-  final String? photoUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.palette;
-    final iconTile = Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            color.withValues(alpha: c.isDark ? 0.36 : 0.18),
-            color.withValues(alpha: c.isDark ? 0.20 : 0.08),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(13),
-      ),
-      child: Icon(icon, color: color, size: 21),
-    );
-
-    return AppTappable(
-      onTap: onTap,
-      pressedScale: 0.94,
-      child: SizedBox(
-        width: 74,
-        child: Column(
-          children: [
-            Container(
-              width: 62,
-              height: 62,
-              decoration: BoxDecoration(
-                color: c.surface,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: c.border),
-                boxShadow: c.shadowSm,
-              ),
-              child: Center(
-                child: photoUrl == null
-                    ? iconTile
-                    : ClipRRect(
-                        borderRadius: BorderRadius.circular(13),
-                        child: CachedNetworkImage(
-                          imageUrl: photoUrl!,
-                          width: 40,
-                          height: 40,
-                          fit: BoxFit.cover,
-                          placeholder: (_, __) => iconTile,
-                          errorWidget: (_, __, ___) => iconTile,
-                        ),
-                      ),
-              ),
-            ),
-            const SizedBox(height: AppDimensions.space8),
-            Text(
-              label,
-              maxLines: 2,
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-              style: AppTypography.caption.copyWith(
-                color: c.textSecondary,
-                fontWeight: FontWeight.w600,
-                height: 1.15,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -278,13 +188,15 @@ class HighlightServiceCard extends StatelessWidget {
                             ),
                             const SizedBox(width: AppDimensions.space8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
                                 color: const Color(0xFF22C55E),
                                 borderRadius: AppDimensions.brPill,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF22C55E).withValues(alpha: 0.5),
+                                    color: const Color(0xFF22C55E)
+                                        .withValues(alpha: 0.5),
                                     blurRadius: 10,
                                     offset: const Offset(0, 3),
                                   ),
@@ -344,7 +256,8 @@ class HighlightServiceCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.18),
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.28)),
                     ),
                     child: photoUrl == null
                         ? Icon(icon, color: Colors.white, size: 28)
@@ -373,7 +286,8 @@ class _PromoGlowPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final glow = Paint()..color = Colors.white.withValues(alpha: 0.10);
-    canvas.drawCircle(Offset(size.width * 0.88, size.height * 0.18), size.height * 0.55, glow);
+    canvas.drawCircle(Offset(size.width * 0.88, size.height * 0.18),
+        size.height * 0.55, glow);
     canvas.drawCircle(
       Offset(size.width * 0.72, size.height * 1.05),
       size.height * 0.45,

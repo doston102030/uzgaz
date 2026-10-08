@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../app/theme/motion.dart';
+import '../utils/haptics.dart';
 
 /// iOS-style press feedback: the target dips slightly and dims instead of
 /// firing a Material ink ripple. Wrapping every interactive surface in
@@ -42,13 +42,13 @@ class _AppTappableState extends State<AppTappable> {
 
   void _handleTap() {
     if (widget.onTap == null) return;
-    if (widget.haptic) HapticFeedback.selectionClick();
+    if (widget.haptic) AppHaptics.tap();
     widget.onTap!();
   }
 
   void _handleLongPress() {
     if (widget.onLongPress == null) return;
-    if (widget.haptic) HapticFeedback.mediumImpact();
+    if (widget.haptic) AppHaptics.emphasis();
     widget.onLongPress!();
   }
 

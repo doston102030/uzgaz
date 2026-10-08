@@ -24,11 +24,11 @@ export function Topbar({ title, subtitle }: { title: string; subtitle?: string }
         </button>
         <div className="flex items-center gap-2.5 rounded-xl border border-border bg-surface py-1.5 pl-1.5 pr-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-light to-brand text-xs font-bold text-white">
-            AG
+            GE
           </div>
           <div className="hidden leading-tight sm:block">
-            <p className="text-sm font-semibold text-foreground">Andijon Gaz Ta&apos;minot</p>
-            <p className="text-xs text-foreground/45">Sherzod Yo&apos;ldoshev</p>
+            <p className="text-sm font-semibold text-foreground">Sotuvchi paneli</p>
+            <p className="text-xs text-foreground/45">Gaz &amp; Energiya</p>
           </div>
         </div>
       </div>

@@ -7,7 +7,8 @@ import '../../domain/entities/order.dart';
 /// Orders live in memory for the mock build; the same API (place / advance)
 /// is what a Firestore-backed repository will expose in Phase 9.
 class OrdersNotifier extends StateNotifier<List<Order>> {
-  OrdersNotifier() : super(mockOrders);
+  // Demo buyurtmalar olib tashlandi — ro'yxat bo'sh boshlanadi.
+  OrdersNotifier() : super(const []);
 
   static int _sequence = 234522;
 

@@ -51,7 +51,7 @@ class _AdminSellersPageState extends ConsumerState<AdminSellersPage> {
             AppButton(
               label: 'Rad etish',
               variant: AppButtonVariant.danger,
-              onPressed: () => Navigator.of(context).pop(
+              onPressed: () => Navigator.of(context, rootNavigator: true).pop(
                 controller.text.trim().isEmpty ? 'Ma’lumotlar yetarli emas' : controller.text.trim(),
               ),
             ),
@@ -91,7 +91,6 @@ class _AdminSellersPageState extends ConsumerState<AdminSellersPage> {
           AppSliverNavBar(
             title: 'Sotuvchilar',
             subtitle: '${all.length} ta firma',
-            showBack: false,
           ),
           SliverPinnedBar(
             height: 58,

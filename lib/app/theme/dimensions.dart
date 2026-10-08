@@ -53,7 +53,11 @@ class AppDimensions {
   static const double buttonHeightSmall = 42;
   static const double inputHeight = 54;
   static const double navBarHeight = 52;
-  static const double bottomNavHeight = 62;
+  /// Height of the floating tab-bar capsule (see `AppTabBar`).
+  static const double bottomNavHeight = 64;
+
+  /// Side inset of the floating tab-bar capsule from the screen edges.
+  static const double bottomNavInset = 16;
   static const double iconSize = 22;
   static const double iconSizeSmall = 18;
   static const double iconSizeLarge = 26;
@@ -61,7 +65,19 @@ class AppDimensions {
   static const double avatarSizeLarge = 68;
   static const double chipHeight = 36;
   static const double touchTargetMin = 44;
-  static const double productImageHeight = 108;
+  /// Edge-to-edge photo at the top of a `ProductCard`. Sized so the photo,
+  /// a two-line name, the seller and a discounted price block still fit
+  /// [productCardHeight] (~304 of 316 at worst) without a dead gap.
+  static const double productImageHeight = 176;
+
+  /// Fixed height of a `ProductCard` grid tile. Every product grid — home,
+  /// catalogue and the loading skeleton — passes this as `mainAxisExtent`
+  /// instead of an aspect ratio: a ratio ties the height to the column
+  /// width, so a narrow phone shrank the card below its content and the
+  /// price row overflowed. It also keeps the three grids identical, so the
+  /// skeleton doesn't jump when data lands.
+  static const double productCardHeight = 316;
+
   static const double heroImageHeight = 300;
 
   /// Extra bottom padding so content clears the floating tab bar.

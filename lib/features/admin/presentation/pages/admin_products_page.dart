@@ -52,7 +52,7 @@ class _AdminProductsPageState extends ConsumerState<AdminProductsPage> {
             AppButton(
               label: 'Rad etish',
               variant: AppButtonVariant.danger,
-              onPressed: () => Navigator.of(context).pop(
+              onPressed: () => Navigator.of(context, rootNavigator: true).pop(
                 controller.text.trim().isEmpty ? 'Talablarga javob bermaydi' : controller.text.trim(),
               ),
             ),
@@ -89,7 +89,6 @@ class _AdminProductsPageState extends ConsumerState<AdminProductsPage> {
           AppSliverNavBar(
             title: 'Mahsulotlar',
             subtitle: '${all.length} ta jami',
-            showBack: false,
           ),
           SliverPinnedBar(
             height: 58,

@@ -28,6 +28,48 @@ extension OrderStatusUi on OrderStatus {
         OrderStatus.yolda => PillTone.primary,
         OrderStatus.yetkazildi => PillTone.success,
       };
+
+  /// The palette colour behind [tone], for icons and progress fills.
+  Color color(AppPalette c) => switch (this) {
+        OrderStatus.qabulQilindi => c.info,
+        OrderStatus.tayyorlanmoqda => c.warning,
+        OrderStatus.yolda => c.primary,
+        OrderStatus.yetkazildi => c.success,
+      };
+}
+
+/// Four-segment progress strip (one segment per [OrderStatus]) for order
+/// cards: segments up to and including the current step are filled.
+class OrderProgressBar extends StatelessWidget {
+  const OrderProgressBar({super.key, required this.status});
+
+  final OrderStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.palette;
+    final fill = status.color(c);
+    return Row(
+      children: [
+        for (int i = 0; i < OrderStatus.values.length; i++) ...[
+          if (i > 0) const SizedBox(width: AppDimensions.space4),
+          Expanded(
+            child: AnimatedContainer(
+              duration: AppMotion.base,
+              curve: AppMotion.standard,
+              height: 4,
+              decoration: BoxDecoration(
+                color: i <= status.step
+                    ? fill
+                    : (c.isDark ? c.surfaceMuted : c.backgroundSunken),
+                borderRadius: AppDimensions.brPill,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
 }
 
 /// Compact horizontal progress used on order cards and the tracking header.

@@ -30,7 +30,6 @@ class SellerReportsPage extends ConsumerWidget {
           const AppSliverNavBar(
             title: 'Hisobot',
             subtitle: 'Savdo va daromad statistikasi',
-            showBack: false,
           ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(

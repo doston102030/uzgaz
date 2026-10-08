@@ -63,7 +63,7 @@ class AddressPage extends ConsumerWidget {
               label: 'Saqlash',
               onPressed: () {
                 if (AppValidators.required(addressController.text) != null) return;
-                Navigator.of(context).pop(true);
+                Navigator.of(context, rootNavigator: true).pop(true);
               },
             ),
           ],
