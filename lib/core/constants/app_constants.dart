@@ -198,19 +198,32 @@ extension AndijonDistrictX on AndijonDistrict {
       };
 }
 
-enum OrderStatus { qabulQilindi, tayyorlanmoqda, yolda, yetkazildi }
+/// Names match the `orders.status` values in Supabase
+/// (`supabase/marketplace_setup.sql`) — the seller moves an order along.
+enum OrderStatus { qabulQilindi, tayyorlanmoqda, yolda, yetkazildi, bekorQilindi }
 
 extension OrderStatusX on OrderStatus {
+  /// The steps drawn on progress timelines; a cancelled order sits outside it.
+  static const flow = [
+    OrderStatus.qabulQilindi,
+    OrderStatus.tayyorlanmoqda,
+    OrderStatus.yolda,
+    OrderStatus.yetkazildi,
+  ];
+
   String get labelUz => switch (this) {
         OrderStatus.qabulQilindi => 'Qabul qilindi',
         OrderStatus.tayyorlanmoqda => 'Tayyorlanmoqda',
         OrderStatus.yolda => 'Yo‘lda',
         OrderStatus.yetkazildi => 'Yetkazildi',
+        OrderStatus.bekorQilindi => 'Bekor qilindi',
       };
 
-  int get step => OrderStatus.values.indexOf(this);
+  /// Position on [flow]; -1 for [OrderStatus.bekorQilindi].
+  int get step => flow.indexOf(this);
 
-  bool get isActive => this != OrderStatus.yetkazildi;
+  bool get isActive =>
+      this != OrderStatus.yetkazildi && this != OrderStatus.bekorQilindi;
 }
 
 enum DeliveryMethod { delivery, selfPickup }
@@ -284,7 +297,7 @@ extension SellerOrderStatusX on SellerOrderStatus {
         SellerOrderStatus.tayyorlanmoqda => OrderStatus.tayyorlanmoqda,
         SellerOrderStatus.yetkazishga => OrderStatus.yolda,
         SellerOrderStatus.yopildi => OrderStatus.yetkazildi,
-        SellerOrderStatus.bekorQilindi => OrderStatus.yetkazildi,
+        SellerOrderStatus.bekorQilindi => OrderStatus.bekorQilindi,
       };
 }
 

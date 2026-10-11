@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../app/theme/colors.dart';
 import '../../app/theme/dimensions.dart';
+import '../../app/theme/motion.dart';
 import '../../app/theme/typography.dart';
 import '../../features/products/domain/entities/product.dart';
 import '../utils/formatters.dart';
@@ -33,7 +37,8 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.palette;
-    final visual = EnergyVisualX.fromCategory(product.categoryId, name: product.name);
+    final visual =
+        EnergyVisualX.fromCategory(product.categoryId, name: product.name);
     final illustration = ProductIllustration(visual: visual, radius: 0);
 
     return AppCard(
@@ -51,41 +56,38 @@ class ProductCard extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                product.imageUrl.startsWith('http')
-                    // `contain` — mahsulot rasmi qirqilmasdan to'liq ko'rinadi
-                    // (balon uzun, `cover` uning past/yuqorisini kesardi).
-                    ? ColoredBox(
-                        color: Colors.white,
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppDimensions.space6),
-                          child: CachedNetworkImage(
-                            imageUrl: product.imageUrl,
-                            fit: BoxFit.contain,
-                            placeholder: (_, __) => illustration,
-                            errorWidget: (_, __, ___) => illustration,
-                          ),
-                        ),
-                      )
-                    : illustration,
+                _CardPhoto(
+                  productId: product.id,
+                  images: product.gallery,
+                  fallback: illustration,
+                ),
                 if (badge != null)
                   Positioned(
                     left: AppDimensions.space10,
                     top: AppDimensions.space10,
-                    child: AppPill(label: badge!, tone: badgeTone, dense: true, filled: true),
+                    child: AppPill(
+                        label: badge!,
+                        tone: badgeTone,
+                        dense: true,
+                        filled: true),
                   ),
-                Positioned(
-                  left: AppDimensions.space10,
-                  bottom: AppDimensions.space10,
-                  child: _RatingChip(
-                    rating: product.rating,
-                    reviewCount: product.reviewCount,
+                if (product.reviewCount > 0)
+                  Positioned(
+                    left: AppDimensions.space10,
+                    bottom: AppDimensions.space10,
+                    child: _RatingChip(
+                      rating: product.rating,
+                      reviewCount: product.reviewCount,
+                    ),
                   ),
-                ),
                 if (!product.isAvailable)
                   ColoredBox(
                     color: c.surface.withValues(alpha: 0.72),
                     child: const Center(
-                      child: AppPill(label: 'Mavjud emas', tone: PillTone.neutral, dense: true),
+                      child: AppPill(
+                          label: 'Mavjud emas',
+                          tone: PillTone.neutral,
+                          dense: true),
                     ),
                   ),
               ],
@@ -116,7 +118,8 @@ class ProductCard extends StatelessWidget {
                   // Kompaniya: logo + yirik, ajralib turadigan nom.
                   Row(
                     children: [
-                      CompanyLogo(name: product.companyName, size: 22, radius: 7),
+                      CompanyLogo(
+                          name: product.companyName, size: 22, radius: 7),
                       const SizedBox(width: AppDimensions.space6),
                       Expanded(
                         child: Text(
@@ -147,6 +150,152 @@ class ProductCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The card's photo area. Several photos cross-fade by themselves — each
+/// card on its own beat, so a grid never flips all at once — and only once
+/// the next photo is loaded. A neutral background keeps the product in focus.
+class _CardPhoto extends StatefulWidget {
+  const _CardPhoto(
+      {required this.productId, required this.images, required this.fallback});
+
+  final String productId;
+  final List<String> images;
+  final Widget fallback;
+
+  @override
+  State<_CardPhoto> createState() => _CardPhotoState();
+}
+
+class _CardPhotoState extends State<_CardPhoto> {
+  int _index = 0;
+  Timer? _start;
+  Timer? _timer;
+  bool _loading = false;
+  int _generation = 0;
+
+  static const _every = Duration(milliseconds: 3600);
+
+  @override
+  void initState() {
+    super.initState();
+    _schedule();
+  }
+
+  @override
+  void didUpdateWidget(_CardPhoto old) {
+    super.didUpdateWidget(old);
+    if (old.productId != widget.productId ||
+        !listEquals(old.images, widget.images)) {
+      _generation++;
+      _index = 0;
+      _schedule();
+    }
+  }
+
+  @override
+  void dispose() {
+    _start?.cancel();
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _schedule() {
+    _start?.cancel();
+    _timer?.cancel();
+    if (widget.images.length < 2) return;
+    // Stable per-product offset (0–3.6 s) staggers the cards.
+    final offset =
+        widget.productId.codeUnits.fold<int>(0, (a, b) => a * 31 + b) %
+            _every.inMilliseconds;
+    _start = Timer(Duration(milliseconds: offset), () {
+      _timer = Timer.periodic(_every, (_) => _next());
+    });
+  }
+
+  Future<void> _next() async {
+    if (_loading || widget.images.length < 2 || !_canTurn) return;
+    _loading = true;
+    final generation = _generation;
+    final next = (_index + 1) % widget.images.length;
+    final url = widget.images[next];
+    try {
+      var failed = false;
+      await precacheImage(
+        CachedNetworkImageProvider(url),
+        context,
+        onError: (_, __) => failed = true,
+      );
+      if (failed || !_canTurn || generation != _generation) return;
+      if (_canTurn && generation == _generation) setState(() => _index = next);
+    } finally {
+      _loading = false;
+    }
+  }
+
+  bool get _canTurn =>
+      mounted &&
+      TickerMode.valuesOf(context).enabled &&
+      !MediaQuery.disableAnimationsOf(context) &&
+      WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+
+  @override
+  Widget build(BuildContext context) {
+    final images = widget.images;
+    if (images.isEmpty) return widget.fallback;
+    final url = images[_index.clamp(0, images.length - 1)];
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        AnimatedSwitcher(
+          duration: AppMotion.slow,
+          // Keep every frame full-size while fading between different
+          // photo proportions, including narrow transparent cut-outs.
+          layoutBuilder: (current, previous) => Stack(
+            fit: StackFit.expand,
+            children: [...previous, if (current != null) current],
+          ),
+          child: ColoredBox(
+            key: ValueKey(url),
+            color: context.palette.surface,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+              child: CachedNetworkImage(
+                imageUrl: url,
+                fit: BoxFit.contain,
+                fadeInDuration: AppMotion.fast,
+                placeholder: (_, __) => widget.fallback,
+                errorWidget: (_, __, ___) => widget.fallback,
+              ),
+            ),
+          ),
+        ),
+        if (images.length > 1)
+          Positioned(
+            right: AppDimensions.space10,
+            bottom: AppDimensions.space12,
+            child: Row(
+              children: [
+                for (var i = 0; i < images.length; i++)
+                  AnimatedContainer(
+                    duration: AppMotion.base,
+                    curve: AppMotion.standard,
+                    margin: const EdgeInsets.only(left: 3),
+                    width: i == _index ? 12 : 5,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: i == _index
+                          ? context.palette.textSecondary
+                          : context.palette.textTertiary.withValues(alpha: 0.3),
+                      borderRadius: AppDimensions.brPill,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }
@@ -332,7 +481,8 @@ class ProductListTile extends StatelessWidget {
                     subtitle!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTypography.caption.copyWith(color: c.textTertiary),
+                    style:
+                        AppTypography.caption.copyWith(color: c.textTertiary),
                   ),
                 ],
                 const SizedBox(height: 4),

@@ -46,7 +46,9 @@ export function formatDateTime(iso: string): string {
   return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function relativeTime(iso: string, now = new Date("2025-09-12T16:00:00")): string {
+// Real "hozir": vaqtlar faqat Supabase'dan yuklangan (mijozda) ma'lumot uchun
+// chiziladi, server render'da emas — gidratsiya farqi bo'lmaydi.
+export function relativeTime(iso: string, now = new Date()): string {
   const diffMs = now.getTime() - new Date(iso).getTime();
   const minutes = Math.floor(diffMs / 60000);
   if (minutes < 1) return "hozirgina";

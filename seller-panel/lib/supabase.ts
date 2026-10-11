@@ -16,14 +16,17 @@ export const PRODUCT_IMAGES_BUCKET = "product-images";
 
 /**
  * Rasmni Supabase Storage'ga yuklaydi va doimiy (public) URL qaytaradi.
- * Fayl nomi to'qnashmasligi uchun vaqt tamg'asi va tasodifiy suffiks qo'shiladi.
+ * Fayl nomi to'qnashmasligi uchun vaqt tamg'asi va tasodifiy suffiks qo'shiladi —
+ * shuning uchun fayl hech qachon o'zgarmaydi va uzoq keshlanadi.
  */
-export async function uploadProductImage(file: File): Promise<string> {
-  const ext = file.name.split(".").pop() || "jpg";
+export async function uploadProductImage(file: Blob): Promise<string> {
+  const byType: Record<string, string> = { "image/webp": "webp", "image/png": "png", "image/jpeg": "jpg" };
+  const ext = byType[file.type] ?? ((file instanceof File && file.name.split(".").pop()) || "jpg");
   const path = `seller-uploads/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
   const { error } = await supabase.storage.from(PRODUCT_IMAGES_BUCKET).upload(path, file, {
-    cacheControl: "3600",
+    cacheControl: "31536000",
+    contentType: file.type || undefined,
     upsert: false,
   });
   if (error) throw error;

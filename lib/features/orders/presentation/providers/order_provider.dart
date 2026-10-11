@@ -1,54 +1,126 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
-import '../../data/datasources/mock_orders.dart';
+import '../../../../core/storage/local_storage.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../data/datasources/supabase_orders_datasource.dart';
 import '../../domain/entities/order.dart';
 
-/// Orders live in memory for the mock build; the same API (place / advance)
-/// is what a Firestore-backed repository will expose in Phase 9.
+/// The buyer's orders, backed by the Supabase `orders` table.
+///
+/// The device remembers the ids it placed, so a guest still finds their
+/// orders after a reload; a signed-in buyer also gets the orders placed
+/// with their phone number. While an order is in progress the list is
+/// re-read every [_pollInterval] — the seller panel moves the status.
 class OrdersNotifier extends StateNotifier<List<Order>> {
-  // Demo buyurtmalar olib tashlandi — ro'yxat bo'sh boshlanadi.
-  OrdersNotifier() : super(const []);
+  OrdersNotifier(this._ref) : super(const []) {
+    _ref.listen(authProvider.select((user) => user?.phone), (_, __) => refresh());
+    refresh();
+  }
 
-  static int _sequence = 234522;
+  final Ref _ref;
+  Timer? _poll;
+  Set<String>? _placedIds;
 
-  Order place({
+  static const _pollInterval = Duration(seconds: 10);
+  static const _placedIdsKey = 'placed_order_ids';
+
+  Future<Set<String>> _loadPlacedIds() async {
+    if (_placedIds != null) return _placedIds!;
+    try {
+      final raw = (await LocalStorage.create()).getString(_placedIdsKey);
+      _placedIds = raw == null ? <String>{} : (jsonDecode(raw) as List).cast<String>().toSet();
+    } catch (_) {
+      // No storage (tests, private mode) — this session's orders only.
+      _placedIds = <String>{};
+    }
+    return _placedIds!;
+  }
+
+  Future<void> _rememberPlaced(String id) async {
+    final ids = await _loadPlacedIds();
+    ids.add(id);
+    try {
+      await (await LocalStorage.create()).setString(_placedIdsKey, jsonEncode(ids.toList()));
+    } catch (_) {}
+  }
+
+  /// Re-reads the list; keeps the current one if the network fails.
+  Future<void> refresh() async {
+    try {
+      final orders = await fetchBuyerOrders(
+        ids: await _loadPlacedIds(),
+        phone: _ref.read(authProvider)?.phone,
+      );
+      if (!mounted) return;
+      state = orders;
+    } catch (_) {
+      // Offline or Supabase not configured — keep what we have.
+    }
+    _syncPolling();
+  }
+
+  void _syncPolling() {
+    if (!mounted) return;
+    final hasActive = state.any((o) => o.status.isActive);
+    if (hasActive && _poll == null) {
+      _poll = Timer.periodic(_pollInterval, (_) => refresh());
+    } else if (!hasActive) {
+      _poll?.cancel();
+      _poll = null;
+    }
+  }
+
+  /// Sends the order to the seller. Throws if Supabase rejects it — the
+  /// payment screen shows the error and keeps the cart.
+  Future<Order> place({
+    required String companyId,
     required String companyName,
     required List<OrderItem> items,
+    required int deliveryFee,
     required int total,
     required DeliveryMethod deliveryMethod,
+    required PaymentMethod paymentMethod,
     String? address,
-    DriverInfo? driver,
-  }) {
-    final id = 'o${DateTime.now().millisecondsSinceEpoch}';
-    final order = Order(
-      id: id,
-      orderNumber: '#GE${_sequence++}',
-      date: DateTime.now(),
+  }) async {
+    final user = _ref.read(authProvider);
+    final order = await insertOrder(
+      id: 'o${DateTime.now().millisecondsSinceEpoch}',
+      companyId: companyId,
       companyName: companyName,
+      buyerName: user?.fullName ?? 'Mehmon',
+      buyerPhone: user?.phone ?? '',
       items: items,
+      subtotal: items.fold(0, (sum, item) => sum + item.subtotal),
+      deliveryFee: deliveryFee,
       total: total,
-      status: OrderStatus.qabulQilindi,
       deliveryMethod: deliveryMethod,
+      paymentMethod: paymentMethod,
       address: address,
-      driver: driver ?? mockDriver,
     );
-    state = [order, ...state];
+    await _rememberPlaced(order.id);
+    if (mounted) {
+      state = [order, ...state.where((o) => o.id != order.id)];
+      _syncPolling();
+    }
     return order;
   }
 
-  /// Moves an order to the next status — used by the tracking screen's
-  /// simulated progress until live backend events exist.
-  void advance(String id) {
-    state = [
-      for (final order in state)
-        if (order.id == id && order.status != OrderStatus.yetkazildi)
-          order.copyWith(
-            status: OrderStatus.values[order.status.step + 1],
-          )
-        else
-          order,
-    ];
+  /// Buyer cancels while the order is still "Qabul qilindi". Returns the
+  /// status it ended in — the seller may have started on it meanwhile.
+  Future<OrderStatus> cancel(String id) async {
+    final status = await cancelOrder(id);
+    if (mounted) {
+      state = [
+        for (final order in state)
+          order.id == id ? order.copyWith(status: status) : order,
+      ];
+      _syncPolling();
+    }
+    return status;
   }
 
   Order? byId(String id) {
@@ -57,10 +129,16 @@ class OrdersNotifier extends StateNotifier<List<Order>> {
     }
     return null;
   }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    super.dispose();
+  }
 }
 
 final ordersProvider =
-    StateNotifierProvider<OrdersNotifier, List<Order>>((ref) => OrdersNotifier());
+    StateNotifierProvider<OrdersNotifier, List<Order>>((ref) => OrdersNotifier(ref));
 
 final orderByIdProvider = Provider.family<Order?, String>((ref, id) {
   final orders = ref.watch(ordersProvider);

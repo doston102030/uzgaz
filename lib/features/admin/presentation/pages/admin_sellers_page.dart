@@ -30,6 +30,13 @@ class AdminSellersPage extends ConsumerStatefulWidget {
 class _AdminSellersPageState extends ConsumerState<AdminSellersPage> {
   _SellerTab _tab = _SellerTab.kutilayotgan;
 
+  @override
+  void initState() {
+    super.initState();
+    // Applications arrive from other devices — fetch the latest on open.
+    ref.read(sellerProfilesProvider.notifier).refresh();
+  }
+
   Future<void> _reject(SellerProfile seller) async {
     final controller = TextEditingController();
     final reason = await AppSheet.show<String>(

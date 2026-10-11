@@ -25,6 +25,8 @@ class SellerProfile extends Equatable {
     this.offersDelivery = true,
     this.offersPickup = true,
     this.logoUrl,
+    this.ownerName = '',
+    this.district = '',
   });
 
   final String id;
@@ -49,6 +51,11 @@ class SellerProfile extends Equatable {
   /// Public Supabase Storage URL of the company logo (`company-logos`
   /// bucket) — null until the seller uploads one.
   final String? logoUrl;
+
+  /// Owner's full name and Andijon district — what the admin panel lists
+  /// next to the company (`sellers.owner_name`, `sellers.district`).
+  final String ownerName;
+  final String district;
 
   SellerProfile copyWith({
     SellerStatus? status,
@@ -75,6 +82,8 @@ class SellerProfile extends Equatable {
         offersDelivery: offersDelivery,
         offersPickup: offersPickup,
         logoUrl: logoUrl ?? this.logoUrl,
+        ownerName: ownerName,
+        district: district,
       );
 
   @override

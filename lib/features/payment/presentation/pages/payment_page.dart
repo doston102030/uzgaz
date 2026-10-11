@@ -46,28 +46,43 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     if (!confirmed || !mounted) return;
 
     setState(() => _loading = true);
-    await Future<void>.delayed(const Duration(milliseconds: 1100));
-    if (!mounted) return;
 
     final items = ref.read(cartProvider);
     final company = ref.read(effectiveCompanyProvider);
     final deliveryMethod = ref.read(deliveryMethodProvider);
 
-    final order = ref.read(ordersProvider.notifier).place(
-          companyName: company.name,
-          items: [
-            for (final item in items)
-              OrderItem(
-                productName: item.product.name,
-                quantity: item.quantity,
-                price: item.product.price,
-                categoryId: item.product.categoryId,
-              ),
-          ],
-          total: total,
-          deliveryMethod: deliveryMethod,
-          address: ref.read(checkoutAddressProvider),
-        );
+    final Order order;
+    try {
+      order = await ref.read(ordersProvider.notifier).place(
+            companyId: company.id,
+            companyName: company.name,
+            items: [
+              for (final item in items)
+                OrderItem(
+                  productId: item.product.id,
+                  productName: item.product.name,
+                  quantity: item.quantity,
+                  price: item.product.price,
+                  categoryId: item.product.categoryId,
+                ),
+            ],
+            deliveryFee: ref.read(deliveryFeeProvider),
+            total: total,
+            deliveryMethod: deliveryMethod,
+            paymentMethod: method,
+            address: ref.read(checkoutAddressProvider),
+          );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      AppToast.show(
+        context,
+        'Buyurtma yuborilmadi — internetni tekshirib, qayta urinib ko‘ring',
+        tone: ToastTone.danger,
+      );
+      return;
+    }
+    if (!mounted) return;
 
     ref.read(lastOrderProvider.notifier).state = order;
     ref.read(cartProvider.notifier).clear();

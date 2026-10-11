@@ -24,6 +24,17 @@ class SupabaseService {
   /// The initialized Supabase client. Available after [init] has run.
   static SupabaseClient get client => Supabase.instance.client;
 
+  /// Whether [init] has run — false in widget tests, so background polling
+  /// that would only ever fail is not started there.
+  static bool get isReady {
+    try {
+      Supabase.instance.client;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Convenience accessor for the current signed-in user, if any.
   static User? get currentUser => client.auth.currentUser;
 }

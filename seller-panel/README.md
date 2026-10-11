@@ -25,8 +25,9 @@ boshqa portda).
 ## Holati
 
 Demo sotuvchi, buyurtmalar va tushumlar olib tashlangan. Mahsulotlar va
-sotuvchi holati Supabase'dan olinadi. Haqiqiy sotuvchi tanlash uchun
-`.env.local` ichida `NEXT_PUBLIC_SELLER_ID` belgilanadi; standart demo ID yo'q.
-Bu sozlama autentifikatsiya o'rnini bosmaydi. Profilni saqlash va buyurtmalar
-backend'i hali ulanmagan; ular bo'sh boshlanadi. Sotuvchi autentifikatsiyasi
-va egalikni tekshiruvchi RLS siyosatlari alohida ish sifatida qoladi.
+sotuvchi holati Supabase'dan olinadi. Panelga `/login` sahifasida kiriladi:
+login va parolni admin beradi (admin panel → Sotuvchilar → "Login berish").
+Buning uchun Supabase'da bir marta `supabase/seller_login_setup.sql` ishga
+tushirilgan bo'lishi kerak. Profilni saqlash va buyurtmalar backend'i hali
+ulanmagan; ular bo'sh boshlanadi. Jadvallarning egalikni tekshiruvchi RLS
+siyosatlari alohida ish sifatida qoladi.

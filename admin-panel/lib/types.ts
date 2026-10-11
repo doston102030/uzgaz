@@ -30,27 +30,15 @@ export const CATEGORY_COLOR: Record<ServiceCategory, string> = {
   market: "var(--color-info)",
 };
 
-export interface Company {
-  id: string;
-  name: string;
-  rating: number;
-  reviewCount: number;
-  address: string;
-  district: string;
-  phone: string;
-  workingHours: string;
-  isAvailable: boolean;
-  deliveryFee: number;
-  tags: string[];
-  joinedAt: string;
-}
-
 export type ModerationStatus = "pending" | "approved" | "rejected";
 
 export interface Product {
   id: string;
   name: string;
+  /** "" — rasm yo'q (panel kategoriya belgisini ko'rsatadi). */
   imageUrl: string;
+  images: string[];
+  stockQty: number;
   price: number;
   oldPrice?: number;
   rating: number;
@@ -59,7 +47,7 @@ export interface Product {
   isPopular: boolean;
   companyId: string;
   companyName: string;
-  categoryId: ServiceCategory;
+  categoryId: string;
   description: string;
   unit: string;
   moderationStatus: ModerationStatus;
@@ -68,6 +56,25 @@ export interface Product {
 }
 
 export type SellerStatus = "pending" | "approved" | "rejected" | "suspended";
+
+/** Andijon viloyati: viloyat markazi + 14 tuman — ilovadagi ro'yxat bilan bir xil yozilishda. */
+export const DISTRICTS = [
+  "Andijon shahri",
+  "Andijon tumani",
+  "Asaka",
+  "Baliqchi",
+  "Bo‘z",
+  "Buloqboshi",
+  "Izboskan",
+  "Jalaquduq",
+  "Marhamat",
+  "Oltinko‘l",
+  "Paxtaobod",
+  "Qo‘rg‘ontepa",
+  "Shahrixon",
+  "Ulug‘nor",
+  "Xo‘jaobod",
+] as const;
 
 export interface Seller {
   id: string;

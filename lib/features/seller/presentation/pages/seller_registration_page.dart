@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/dimensions.dart';
 import '../../../../app/theme/colors.dart';
+import '../../../../app/theme/motion.dart';
 import '../../../../app/theme/typography.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/utils/input_formatters.dart';
@@ -31,12 +32,17 @@ class SellerRegistrationPage extends ConsumerStatefulWidget {
 class _SellerRegistrationPageState extends ConsumerState<SellerRegistrationPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  // Prefilled for a signed-in user; a guest types it and becomes the
+  // account the company belongs to.
+  late final _ownerController =
+      TextEditingController(text: ref.read(authProvider)?.fullName ?? '');
   final _descriptionController = TextEditingController();
   final _addressController = TextEditingController();
   final _phoneController = TextEditingController();
   final _deliveryFeeController = TextEditingController(text: '15 000');
 
   ServiceCategory _category = ServiceCategory.gazBallon;
+  AndijonDistrict _district = AndijonDistrict.andijonShahri;
   String _workingHours = '09:00 - 21:00';
   String? _logoUrl;
   bool _offersDelivery = true;
@@ -48,6 +54,7 @@ class _SellerRegistrationPageState extends ConsumerState<SellerRegistrationPage>
   @override
   void dispose() {
     _nameController.dispose();
+    _ownerController.dispose();
     _descriptionController.dispose();
     _addressController.dispose();
     _phoneController.dispose();
@@ -67,6 +74,17 @@ class _SellerRegistrationPageState extends ConsumerState<SellerRegistrationPage>
     if (picked != null) setState(() => _category = picked);
   }
 
+  Future<void> _pickDistrict() async {
+    final picked = await AppPickerSheet.show<AndijonDistrict>(
+      context,
+      title: 'Tuman',
+      options: AndijonDistrict.values,
+      labelOf: (d) => d.titleUz,
+      selected: _district,
+    );
+    if (picked != null) setState(() => _district = picked);
+  }
+
   Future<void> _pickHours() async {
     final picked = await AppPickerSheet.show<String>(
       context,
@@ -79,7 +97,23 @@ class _SellerRegistrationPageState extends ConsumerState<SellerRegistrationPage>
   }
 
   Future<void> _submit() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    // A missing field may sit far above the button — say so and scroll to
+    // it, instead of a tap that seems to do nothing.
+    final invalid = _formKey.currentState?.validateGranularly() ?? const {};
+    if (invalid.isNotEmpty) {
+      AppToast.show(
+        context,
+        'Qizil bilan belgilangan maydonni to‘ldiring',
+        tone: ToastTone.warning,
+      );
+      Scrollable.ensureVisible(
+        invalid.first.context,
+        duration: AppMotion.base,
+        curve: AppMotion.standard,
+        alignment: .2,
+      );
+      return;
+    }
     if (!_offersDelivery && !_offersPickup) {
       AppToast.show(
         context,
@@ -89,32 +123,60 @@ class _SellerRegistrationPageState extends ConsumerState<SellerRegistrationPage>
       return;
     }
 
-    final user = ref.read(authProvider);
-    if (user == null) return;
+    final ownerName = _ownerController.text.trim();
+    final phone = '+998${_phoneController.text.replaceAll(' ', '')}';
 
     setState(() => _submitting = true);
-    await Future<void>.delayed(const Duration(milliseconds: 600));
+
+    // Browsing as a guest ("Mehmon sifatida ko‘rish") — sign them up with
+    // the name and phone from this form, so the application has an owner.
+    var user = ref.read(authProvider);
+    if (user == null) {
+      await ref
+          .read(authProvider.notifier)
+          .register(fullName: ownerName, phone: phone);
+      user = ref.read(authProvider);
+    }
+    if (user == null) {
+      if (mounted) setState(() => _submitting = false);
+      return;
+    }
 
     final deliveryFee = int.tryParse(
           _deliveryFeeController.text.replaceAll(RegExp(r'[^0-9]'), ''),
         ) ??
         0;
 
-    final profile = ref.read(sellerProfilesProvider.notifier).apply(
-          ownerUserId: user.id,
-          companyName: _nameController.text.trim(),
-          category: _category,
-          description: _descriptionController.text.trim(),
-          address: _addressController.text.trim(),
-          phone: '+998${_phoneController.text.replaceAll(' ', '')}',
-          workingHours: _workingHours,
-          deliveryFee: _offersDelivery ? deliveryFee : 0,
-          offersDelivery: _offersDelivery,
-          offersPickup: _offersPickup,
-          logoUrl: _logoUrl,
-        );
-
-    ref.read(authProvider.notifier).linkSeller(profile.id);
+    // Sent to Supabase, where the admin panel's "Yangi arizalar" picks it
+    // up; only a stored application moves on to the waiting screen.
+    try {
+      final profile =
+          await ref.read(sellerProfilesProvider.notifier).submitApplication(
+                ownerUserId: user.id,
+                ownerName: ownerName,
+                companyName: _nameController.text.trim(),
+                category: _category,
+                district: _district.titleUz,
+                description: _descriptionController.text.trim(),
+                address: _addressController.text.trim(),
+                phone: phone,
+                workingHours: _workingHours,
+                deliveryFee: _offersDelivery ? deliveryFee : 0,
+                offersDelivery: _offersDelivery,
+                offersPickup: _offersPickup,
+                logoUrl: _logoUrl,
+              );
+      ref.read(authProvider.notifier).linkSeller(profile.id);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      AppToast.show(
+        context,
+        'Arizani yuborib bo‘lmadi. Internetni tekshirib, qayta urinib ko‘ring.',
+        tone: ToastTone.danger,
+      );
+      return;
+    }
 
     if (!mounted) return;
     setState(() => _submitting = false);
@@ -177,6 +239,15 @@ class _SellerRegistrationPageState extends ConsumerState<SellerRegistrationPage>
                       validator: (v) => AppValidators.required(v, field: 'Firma nomi'),
                     ),
                     const SizedBox(height: AppDimensions.space16),
+                    AppTextField(
+                      controller: _ownerController,
+                      label: 'Ism-familiyangiz',
+                      hint: 'Firma egasi yoki mas’ul shaxs',
+                      prefixIcon: Icons.person_outline_rounded,
+                      textCapitalization: TextCapitalization.words,
+                      validator: AppValidators.fullName,
+                    ),
+                    const SizedBox(height: AppDimensions.space16),
                     AppSelectField(
                       label: 'Kategoriya',
                       value: _category.titleUz,
@@ -194,10 +265,17 @@ class _SellerRegistrationPageState extends ConsumerState<SellerRegistrationPage>
                       validator: (v) => AppValidators.required(v, field: 'Tavsif'),
                     ),
                     const SizedBox(height: AppDimensions.space16),
+                    AppSelectField(
+                      label: 'Tuman',
+                      value: _district.titleUz,
+                      prefixIcon: Icons.map_outlined,
+                      onTap: _pickDistrict,
+                    ),
+                    const SizedBox(height: AppDimensions.space16),
                     AppTextField(
                       controller: _addressController,
                       label: 'Manzil',
-                      hint: 'Tuman, ko‘cha, uy raqami',
+                      hint: 'Ko‘cha, uy raqami',
                       prefixIcon: Icons.place_outlined,
                       maxLines: 2,
                       textCapitalization: TextCapitalization.sentences,

@@ -85,11 +85,13 @@ class OrderTrackingPage extends ConsumerWidget {
                               Text(
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                order.status == OrderStatus.yetkazildi
-                                    ? 'Buyurtma yetkazildi'
-                                    : (minutesLeft > 0
-                                        ? '$minutesLeft daqiqada yetadi'
-                                        : 'Tez orada yetadi'),
+                                switch (order.status) {
+                                  OrderStatus.yetkazildi => 'Buyurtma yetkazildi',
+                                  OrderStatus.bekorQilindi => 'Buyurtma bekor qilindi',
+                                  _ => minutesLeft > 0
+                                      ? '$minutesLeft daqiqada yetadi'
+                                      : 'Tez orada yetadi',
+                                },
                                 style: AppTypography.title2
                                     .copyWith(color: c.textPrimary),
                               ),
@@ -123,18 +125,9 @@ class OrderTrackingPage extends ConsumerWidget {
                                       .copyWith(color: c.textPrimary),
                                 ),
                               ),
-                              if (order.status.isActive)
-                                Flexible(
-                                  child: AppButton(
-                                    label: 'Keyingi bosqich',
-                                    variant: AppButtonVariant.text,
-                                    size: AppButtonSize.small,
-                                    expand: false,
-                                    onPressed: () => ref
-                                        .read(ordersProvider.notifier)
-                                        .advance(order.id),
-                                  ),
-                                ),
+                              // The seller panel moves the status; the list
+                              // refreshes itself while the order is active.
+                              if (order.status.isActive) const LivePulse(),
                             ],
                           ),
                           const SizedBox(height: AppDimensions.space16),
@@ -291,11 +284,26 @@ class OrderTrackingPage extends ConsumerWidget {
                                   destructive: true,
                                   icon: Icons.cancel_outlined,
                                 );
-                                if (confirmed && context.mounted) {
+                                if (!confirmed || !context.mounted) return;
+                                try {
+                                  final status = await ref
+                                      .read(ordersProvider.notifier)
+                                      .cancel(order.id);
+                                  if (!context.mounted) return;
                                   AppToast.show(
                                     context,
-                                    'So‘rov qabul qilindi',
+                                    status == OrderStatus.bekorQilindi
+                                        ? 'Buyurtma bekor qilindi'
+                                        : 'Kompaniya buyurtmani tayyorlashni boshladi — '
+                                            'bekor qilish uchun qo‘ng‘iroq qiling',
                                     tone: ToastTone.warning,
+                                  );
+                                } catch (_) {
+                                  if (!context.mounted) return;
+                                  AppToast.show(
+                                    context,
+                                    'Bekor qilinmadi — internetni tekshiring',
+                                    tone: ToastTone.danger,
                                   );
                                 }
                               },

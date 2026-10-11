@@ -137,9 +137,11 @@ class ProfilePage extends ConsumerWidget {
                         tone: AppColors.darkNavy,
                         title: 'Administrator paneli',
                         value: 'demo',
-                        onTap: () {
-                          ref.read(authProvider.notifier).signInAsAdmin();
-                          context.go('/admin/dashboard');
+                        // Wait for the sign-in, or the admin gate briefly
+                        // shows "Kirish taqiqlangan" before the role lands.
+                        onTap: () async {
+                          await ref.read(authProvider.notifier).signInAsAdmin();
+                          if (context.mounted) context.go('/admin/dashboard');
                         },
                       ),
                     ],

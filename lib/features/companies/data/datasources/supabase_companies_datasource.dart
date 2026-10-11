@@ -2,12 +2,14 @@ import '../../../../core/network/supabase_client.dart';
 import '../../domain/entities/company.dart';
 
 /// Reads the buyer-facing company list from the `companies` table (see
-/// `supabase/catalog_setup.sql`). Replaces `mockCompanies` — the UI still
-/// only depends on [Company].
+/// `supabase/catalog_setup.sql`). Every seller has a row there
+/// (`supabase/marketplace_setup.sql`); `is_available` is true only while
+/// the admin has the seller approved.
 Future<List<Company>> fetchCompanies() async {
   final rows = await SupabaseService.client
       .from('companies')
       .select()
+      .eq('is_available', true)
       // Retired demo IDs; also excluded while the database cleanup is pending.
       .not('id', 'in', '(c1,c2,c3,c4,c5,c6)')
       .order('rating', ascending: false);

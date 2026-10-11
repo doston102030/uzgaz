@@ -53,12 +53,15 @@ export interface SellerProduct {
   imageUrl: string;
   /** Qo'shimcha rasm(lar) — birinchisi imageUrl bilan bir xil bo'ladi. */
   images?: string[];
-  categoryId: ServiceCategory;
+  /** `PRODUCT_CATEGORIES` dagi id yoki sotuvchi yaratgan kategoriya nomi. */
+  categoryId: string;
   description: string;
   price: number;
   oldPrice?: number;
   unit: string;
   stockQty: number;
+  /** false — sotuvchi vaqtincha sotuvdan olgan. */
+  isAvailable: boolean;
   moderationStatus: ModerationStatus;
   rejectionReason?: string;
   createdAt: string;

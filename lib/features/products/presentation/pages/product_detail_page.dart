@@ -1,28 +1,22 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/colors.dart';
-import '../../../../app/theme/dimensions.dart';
 import '../../../../app/theme/typography.dart';
 import '../../../../core/utils/formatters.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_segmented_control.dart';
-import '../../../../core/widgets/app_surface.dart';
-import '../../../../core/widgets/company_card.dart';
+import '../../../../core/widgets/app_tappable.dart';
 import '../../../../core/widgets/custom_dialog.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/product_illustration.dart';
-import '../../../../core/widgets/quantity_selector.dart';
-import '../../../../core/widgets/rating_widget.dart';
 import '../../../cart/presentation/providers/cart_provider.dart';
-import '../../../companies/presentation/providers/company_provider.dart';
 import '../providers/product_provider.dart';
+import '../widgets/product_gallery.dart';
 
 class ProductDetailPage extends ConsumerStatefulWidget {
   const ProductDetailPage({super.key, required this.productId});
-
   final String productId;
 
   @override
@@ -37,7 +31,6 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
   Widget build(BuildContext context) {
     final c = context.palette;
     final product = ref.watch(productByIdProvider(widget.productId));
-
     if (product == null) {
       return Scaffold(
         body: SafeArea(
@@ -51,462 +44,328 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
         ),
       );
     }
-
-    final visual = EnergyVisualX.fromCategory(product.categoryId, name: product.name);
-    final cheapest = ref.watch(companyHighlightsProvider).cheapestId;
-    final bestCompany =
-        cheapest == null ? null : ref.watch(companyByIdProvider(cheapest));
+    final surface = c.isDark ? const Color(0xFF1C1C1E) : Colors.white;
+    final gallerySurface =
+        c.isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF5F5F7);
     final total = product.price * _quantity;
+    final description = product.description?.trim() ?? '';
 
     return Scaffold(
+      backgroundColor: surface,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             pinned: true,
-            stretch: true,
-            expandedHeight: AppDimensions.heroImageHeight,
-            backgroundColor: c.background,
+            expandedHeight:
+                (MediaQuery.sizeOf(context).height * 0.52).clamp(340.0, 500.0),
+            backgroundColor: gallerySurface,
             surfaceTintColor: Colors.transparent,
+            elevation: 0,
+            scrolledUnderElevation: 0,
             leadingWidth: 64,
             leading: Padding(
-              padding: const EdgeInsets.only(left: AppDimensions.gutter),
+              padding: const EdgeInsets.only(left: 16),
               child: Center(
-                child: AppBackButton(onTap: () => context.pop()),
+                child: _CircleAction(
+                  label: 'Orqaga',
+                  icon: CupertinoIcons.chevron_back,
+                  onTap: () => context.pop(),
+                ),
               ),
             ),
             actions: [
-              AppIconButton(
+              _CircleAction(
+                label: _favourite
+                    ? 'Sevimlilardan olib tashlash'
+                    : 'Sevimlilarga qo‘shish',
                 icon: _favourite
-                    ? Icons.favorite_rounded
-                    : Icons.favorite_border_rounded,
-                foreground: _favourite ? c.danger : c.textPrimary,
+                    ? CupertinoIcons.heart_fill
+                    : CupertinoIcons.heart,
+                foreground: _favourite ? c.danger : null,
                 onTap: () => setState(() => _favourite = !_favourite),
               ),
-              const SizedBox(width: AppDimensions.space8),
-              AppIconButton(
-                icon: Icons.ios_share_rounded,
-                iconSize: 18,
-                onTap: () => AppToast.show(context, 'Havola nusxalandi'),
+              const SizedBox(width: 8),
+              _CircleAction(
+                label: 'Havolani nusxalash',
+                icon: CupertinoIcons.square_arrow_up,
+                onTap: () async {
+                  await Clipboard.setData(ClipboardData(
+                    text: Uri.base
+                        .replace(fragment: '/product/${product.id}')
+                        .toString(),
+                  ));
+                  if (context.mounted) {
+                    AppToast.show(context, 'Havola nusxalandi');
+                  }
+                },
               ),
-              const SizedBox(width: AppDimensions.gutter),
+              const SizedBox(width: 16),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      visual.accent.withValues(alpha: c.isDark ? 0.28 : 0.16),
-                      c.background,
-                    ],
-                  ),
-                ),
-                child: product.imageUrl.startsWith('http')
-                    // `contain` — the whole product stays in frame. `cover`
-                    // cropped a tall cylinder down to its middle band.
-                    ? Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          AppDimensions.gutter,
-                          MediaQuery.paddingOf(context).top + 48,
-                          AppDimensions.gutter,
-                          AppDimensions.space16,
-                        ),
-                        child: CachedNetworkImage(
-                          imageUrl: product.imageUrl,
-                          fit: BoxFit.contain,
-                          placeholder: (_, __) =>
-                              ProductIllustration(visual: visual, showStage: false),
-                          errorWidget: (_, __, ___) =>
-                              ProductIllustration(visual: visual, showStage: false),
-                        ),
-                      )
-                    : Padding(
-                        padding: const EdgeInsets.only(top: 40),
-                        child: ProductIllustration(visual: visual, showStage: false),
-                      ),
+              background: ProductGallery(
+                images: product.gallery,
+                visual: EnergyVisualX.fromCategory(product.categoryId,
+                    name: product.name),
+                safeTop: MediaQuery.paddingOf(context).top,
               ),
             ),
           ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppDimensions.gutter,
-                AppDimensions.space4,
-                AppDimensions.gutter,
-                0,
-              ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+            sliver: SliverToBoxAdapter(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      AppPill(
-                        label: product.isAvailable ? 'Mavjud' : 'Mavjud emas',
-                        tone: product.isAvailable ? PillTone.success : PillTone.neutral,
-                        icon: product.isAvailable
-                            ? Icons.check_circle_rounded
-                            : Icons.remove_circle_outline_rounded,
-                      ),
-                      if (product.isPopular) ...[
-                        const SizedBox(width: AppDimensions.space6),
-                        const AppPill(
-                          label: 'Ommabop',
-                          tone: PillTone.flame,
-                          icon: Icons.local_fire_department_rounded,
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: AppDimensions.space12),
                   Text(
-                    product.name,
-                    style: AppTypography.title1.copyWith(color: c.textPrimary),
+                    product.isAvailable
+                        ? 'Sotuvda mavjud'
+                        : 'Hozircha mavjud emas',
+                    style: AppTypography.caption.copyWith(
+                      color: product.isAvailable ? c.success : c.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                  const SizedBox(height: AppDimensions.space8),
-                  Row(
-                    children: [
-                      RatingWidget(
-                        rating: product.rating,
-                        reviewCount: product.reviewCount,
-                        size: 14,
-                        showReviewsLabel: true,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppDimensions.space16),
-                  Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.end,
-                    children: [
+                  const SizedBox(height: 8),
+                  Text(product.name,
+                      style: AppTypography.title1.copyWith(
+                        color: c.textPrimary,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -0.7,
+                        height: 1.15,
+                      )),
+                  const SizedBox(height: 12),
+                  if (product.reviewCount > 0)
+                    Row(children: [
+                      Icon(CupertinoIcons.star_fill, size: 13, color: c.star),
+                      const SizedBox(width: 5),
                       Text(
-                        AppFormatters.currency(product.price),
-                        style: AppTypography.priceLarge.copyWith(color: c.textPrimary),
-                      ),
-                      const SizedBox(width: AppDimensions.space8),
-                      if (product.hasDiscount) ...[
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Text(
-                            AppFormatters.currency(product.oldPrice!),
+                          '${product.rating.toStringAsFixed(1)}  ·  ${product.reviewCount} ta sharh',
+                          style: AppTypography.caption
+                              .copyWith(color: c.textSecondary)),
+                    ])
+                  else
+                    Text('Hozircha sharhlar yo‘q',
+                        style: AppTypography.caption
+                            .copyWith(color: c.textTertiary)),
+                  const SizedBox(height: 20),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(AppFormatters.currency(product.price),
+                          style: AppTypography.title1.copyWith(
+                              color: c.textPrimary,
+                              fontSize: 28,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: -0.8)),
+                      if (product.hasDiscount)
+                        Text(AppFormatters.currency(product.oldPrice!),
                             style: AppTypography.callout.copyWith(
-                              color: c.textTertiary,
-                              decoration: TextDecoration.lineThrough,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: AppDimensions.space6),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 5),
-                          child: AppPill(
-                            label: '-${product.discountPercent}%',
-                            tone: PillTone.danger,
-                            filled: true,
-                            dense: true,
-                          ),
-                        ),
-                      ] else
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 5),
-                          child: Text(
-                            '/ ${product.unit}',
-                            style: AppTypography.callout.copyWith(color: c.textTertiary),
-                          ),
-                        ),
+                                color: c.textTertiary,
+                                decoration: TextDecoration.lineThrough)),
                     ],
                   ),
-                  const SizedBox(height: AppDimensions.space20),
-                  _SellerRow(
-                    companyName: product.companyName,
+                  const SizedBox(height: 4),
+                  Text('1 ${product.unit} uchun',
+                      style: AppTypography.caption
+                          .copyWith(color: c.textTertiary)),
+                  const SizedBox(height: 24),
+                  Divider(height: 1, thickness: 0.5, color: c.separator),
+                  AppTappable(
                     onTap: () => context.push('/companies'),
-                  ),
-                  const SizedBox(height: AppDimensions.space16),
-                  const _GuaranteeStrip(),
-                  const SizedBox(height: AppDimensions.space24),
-                  Text(
-                    'Tavsif',
-                    style: AppTypography.title3.copyWith(color: c.textPrimary),
-                  ),
-                  const SizedBox(height: AppDimensions.space8),
-                  Text(
-                    product.description ?? '',
-                    style: AppTypography.body.copyWith(
-                      color: c.textSecondary,
-                      height: 1.55,
-                    ),
-                  ),
-                  if (product.specs.isNotEmpty) ...[
-                    const SizedBox(height: AppDimensions.space24),
-                    Text(
-                      'Xususiyatlari',
-                      style: AppTypography.title3.copyWith(color: c.textPrimary),
-                    ),
-                    const SizedBox(height: AppDimensions.space12),
-                    AppCard(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppDimensions.space16,
-                        vertical: AppDimensions.space4,
-                      ),
-                      child: Column(
-                        children: [
-                          for (final entry in product.specs.entries)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: AppDimensions.space10),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      entry.key,
-                                      style: AppTypography.callout
-                                          .copyWith(color: c.textSecondary),
-                                    ),
-                                  ),
-                                  Text(
-                                    entry.value,
-                                    style: AppTypography.callout.copyWith(
-                                      color: c.textPrimary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  if (bestCompany != null) ...[
-                    const SizedBox(height: AppDimensions.space24),
-                    AppCard(
-                      onTap: () => context.push('/companies'),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          c.primarySoft,
-                          c.primarySoft.withValues(alpha: c.isDark ? 0.6 : 0.4),
-                        ],
-                      ),
-                      borderColor: c.primary.withValues(alpha: 0.25),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: c.primary,
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Icon(Icons.compare_arrows_rounded,
-                                color: c.onPrimary, size: 22),
-                          ),
-                          const SizedBox(width: AppDimensions.space12),
-                          Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: Row(children: [
+                        Icon(CupertinoIcons.building_2_fill,
+                            size: 25, color: c.textSecondary),
+                        const SizedBox(width: 14),
+                        Expanded(
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '6 ta kompaniyani solishtiring',
-                                  style: AppTypography.callout.copyWith(
-                                    color: c.textPrimary,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Eng arzoni: ${bestCompany.name} · '
-                                  '${AppFormatters.currency(bestCompany.totalPrice)}',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                              Text('Sotuvchi',
                                   style: AppTypography.caption
-                                      .copyWith(color: c.textSecondary),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(Icons.chevron_right_rounded,
-                              color: c.primary, size: 20),
-                        ],
-                      ),
+                                      .copyWith(color: c.textTertiary)),
+                              const SizedBox(height: 3),
+                              Text(product.companyName,
+                                  style: AppTypography.callout.copyWith(
+                                      color: c.textPrimary,
+                                      fontWeight: FontWeight.w600)),
+                            ])),
+                        Icon(CupertinoIcons.chevron_forward,
+                            size: 16, color: c.textTertiary),
+                      ]),
                     ),
+                  ),
+                  Divider(height: 1, thickness: 0.5, color: c.separator),
+                  if (description.isNotEmpty &&
+                      description != 'Tavsif kiritilmagan.') ...[
+                    const SizedBox(height: 24),
+                    Text('Mahsulot haqida',
+                        style: AppTypography.headline
+                            .copyWith(color: c.textPrimary)),
+                    const SizedBox(height: 10),
+                    Text(description,
+                        style: AppTypography.body
+                            .copyWith(color: c.textSecondary, height: 1.5)),
                   ],
-                  const SizedBox(height: AppDimensions.space40),
+                  if (product.specs.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    Text('Xususiyatlari',
+                        style: AppTypography.headline
+                            .copyWith(color: c.textPrimary)),
+                    const SizedBox(height: 10),
+                    for (final entry in product.specs.entries)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                  child: Text(entry.key,
+                                      style: AppTypography.callout
+                                          .copyWith(color: c.textSecondary))),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                  child: Text(entry.value,
+                                      textAlign: TextAlign.end,
+                                      style: AppTypography.callout
+                                          .copyWith(color: c.textPrimary))),
+                            ]),
+                      ),
+                  ],
                 ],
               ),
             ),
           ),
         ],
       ),
-      bottomNavigationBar: _BuyBar(
-        quantity: _quantity,
-        total: total,
-        enabled: product.isAvailable,
-        onIncrement: () => setState(() => _quantity++),
-        onDecrement: () => setState(() => _quantity--),
-        onAdd: () {
-          for (var i = 0; i < _quantity; i++) {
-            ref.read(cartProvider.notifier).add(product);
-          }
-          AppToast.show(
-            context,
-            'Savatga qo‘shildi',
-            tone: ToastTone.success,
-          );
-          context.push('/cart');
-        },
-      ),
-    );
-  }
-}
-
-class _SellerRow extends StatelessWidget {
-  const _SellerRow({required this.companyName, required this.onTap});
-
-  final String companyName;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.palette;
-    return AppCard(
-      onTap: onTap,
-      padding: const EdgeInsets.all(AppDimensions.space12),
-      child: Row(
-        children: [
-          CompanyLogo(name: companyName, size: 40),
-          const SizedBox(width: AppDimensions.space12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Sotuvchi',
-                  style: AppTypography.caption2.copyWith(color: c.textTertiary),
-                ),
-                Text(
-                  companyName,
-                  style: AppTypography.callout.copyWith(
-                    color: c.textPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            'Barcha takliflar',
-            style: AppTypography.caption.copyWith(
-              color: c.primary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          Icon(Icons.chevron_right_rounded, size: 18, color: c.primary),
-        ],
-      ),
-    );
-  }
-}
-
-class _GuaranteeStrip extends StatelessWidget {
-  const _GuaranteeStrip();
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.palette;
-    const items = [
-      (Icons.local_shipping_rounded, 'Tez\nyetkazish'),
-      (Icons.verified_user_rounded, 'Sertifikat\nbilan'),
-      (Icons.replay_rounded, 'Qaytarish\nkafolati'),
-    ];
-
-    return Row(
-      children: [
-        for (final item in items) ...[
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: AppDimensions.space12),
-              decoration: BoxDecoration(
-                color: c.isDark ? c.surfaceMuted : c.backgroundSunken,
-                borderRadius: AppDimensions.brSmall,
+      bottomNavigationBar: DecoratedBox(
+        decoration: BoxDecoration(
+            color: surface,
+            border: Border(top: BorderSide(color: c.separator, width: 0.5))),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+            child: Row(children: [
+              Container(
+                decoration: BoxDecoration(
+                    color: gallerySurface,
+                    borderRadius: BorderRadius.circular(14)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  _QuantityAction(
+                      icon: CupertinoIcons.minus,
+                      label: 'Kamaytirish',
+                      onTap: _quantity > 1
+                          ? () => setState(() => _quantity--)
+                          : null),
+                  Text('$_quantity',
+                      style: AppTypography.callout.copyWith(
+                          color: c.textPrimary, fontWeight: FontWeight.w600)),
+                  _QuantityAction(
+                      icon: CupertinoIcons.plus,
+                      label: 'Ko‘paytirish',
+                      onTap: _quantity < 99
+                          ? () => setState(() => _quantity++)
+                          : null),
+                ]),
               ),
-              child: Column(
-                children: [
-                  Icon(item.$1, size: 19, color: c.primary),
-                  const SizedBox(height: 6),
-                  Text(
-                    item.$2,
-                    textAlign: TextAlign.center,
-                    style: AppTypography.caption2.copyWith(
-                      color: c.textSecondary,
-                      height: 1.25,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (item != items.last) const SizedBox(width: AppDimensions.space8),
-        ],
-      ],
-    );
-  }
-}
-
-class _BuyBar extends StatelessWidget {
-  const _BuyBar({
-    required this.quantity,
-    required this.total,
-    required this.enabled,
-    required this.onIncrement,
-    required this.onDecrement,
-    required this.onAdd,
-  });
-
-  final int quantity;
-  final int total;
-  final bool enabled;
-  final VoidCallback onIncrement;
-  final VoidCallback onDecrement;
-  final VoidCallback onAdd;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.palette;
-    return Container(
-      decoration: BoxDecoration(
-        color: c.surface,
-        border: Border(top: BorderSide(color: c.separator)),
-        boxShadow: c.shadowLg,
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppDimensions.gutter,
-            AppDimensions.space12,
-            AppDimensions.gutter,
-            AppDimensions.space12,
-          ),
-          child: Row(
-            children: [
-              QuantitySelector(
-                quantity: quantity,
-                onIncrement: onIncrement,
-                onDecrement: onDecrement,
-              ),
-              const SizedBox(width: AppDimensions.space12),
+              const SizedBox(width: 12),
               Expanded(
-                child: AppButton(
-                  label: enabled ? 'Savatga' : 'Mavjud emas',
-                  trailingLabel: enabled ? AppFormatters.currencyShort(total) : null,
-                  icon: enabled ? Icons.shopping_bag_outlined : null,
-                  onPressed: enabled ? onAdd : null,
+                child: CupertinoButton(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  color: c.primary,
+                  borderRadius: BorderRadius.circular(14),
+                  onPressed: product.isAvailable
+                      ? () {
+                          for (var i = 0; i < _quantity; i++) {
+                            ref.read(cartProvider.notifier).add(product);
+                          }
+                          AppToast.show(context, 'Savatga qo‘shildi',
+                              tone: ToastTone.success);
+                          context.push('/cart');
+                        }
+                      : null,
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Text(
+                        product.isAvailable
+                            ? 'Savatga qo‘shish'
+                            : 'Mavjud emas',
+                        textAlign: TextAlign.center,
+                        style: AppTypography.callout.copyWith(
+                            color: Colors.white, fontWeight: FontWeight.w600)),
+                    if (product.isAvailable)
+                      Text(AppFormatters.currency(total),
+                          style: AppTypography.caption2.copyWith(
+                              color: Colors.white.withValues(alpha: 0.85))),
+                  ]),
                 ),
               ),
-            ],
+            ]),
           ),
         ),
       ),
     );
   }
+}
+
+class _CircleAction extends StatelessWidget {
+  const _CircleAction(
+      {required this.label,
+      required this.icon,
+      required this.onTap,
+      this.foreground});
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  final Color? foreground;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        label: label,
+        button: true,
+        child: AppTappable(
+          onTap: onTap,
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: context.palette.isDark
+                    ? const Color(0xFF2C2C2E)
+                    : Colors.white),
+            child: Icon(icon,
+                size: 20, color: foreground ?? context.palette.textPrimary),
+          ),
+        ),
+      );
+}
+
+class _QuantityAction extends StatelessWidget {
+  const _QuantityAction({required this.icon, required this.label, this.onTap});
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        label: label,
+        button: true,
+        enabled: onTap != null,
+        child: AppTappable(
+          onTap: onTap,
+          child: SizedBox(
+              width: 40,
+              height: 52,
+              child: Icon(icon,
+                  size: 16,
+                  color: onTap == null
+                      ? context.palette.textTertiary
+                      : context.palette.textPrimary)),
+        ),
+      );
 }

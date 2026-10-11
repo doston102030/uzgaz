@@ -9,8 +9,10 @@ Future<List<Product>> fetchProducts() async {
       .from('products')
       // The seller's current name. `company_name` is a copy taken when the
       // product was added and goes stale once the company is renamed.
-      .select('*, company:companies(name)')
+      // Inner join: a suspended/unapproved seller's products stay hidden.
+      .select('*, company:companies!inner(name, is_available)')
       .eq('moderation_status', 'approved')
+      .eq('company.is_available', true)
       .order('created_at');
 
   return rows.map(_productFromRow).toList();
@@ -21,6 +23,10 @@ Product _productFromRow(Map<String, dynamic> row) {
     id: row['id'] as String,
     name: row['name'] as String,
     imageUrl: (row['image_url'] as String?) ?? '',
+    images: ((row['images'] as List?) ?? const [])
+        .whereType<String>()
+        .where((url) => url.startsWith('http'))
+        .toList(),
     price: row['price'] as int,
     oldPrice: row['old_price'] as int?,
     rating: (row['rating'] as num).toDouble(),

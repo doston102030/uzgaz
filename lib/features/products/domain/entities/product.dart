@@ -5,6 +5,7 @@ class Product extends Equatable {
     required this.id,
     required this.name,
     required this.imageUrl,
+    this.images = const [],
     required this.price,
     required this.rating,
     required this.reviewCount,
@@ -22,6 +23,9 @@ class Product extends Equatable {
   final String id;
   final String name;
   final String imageUrl;
+
+  /// Every photo the seller uploaded, main one first (may be empty).
+  final List<String> images;
   final int price;
   final double rating;
   final int reviewCount;
@@ -38,6 +42,14 @@ class Product extends Equatable {
 
   /// Short key/value facts shown on the detail screen (hajm, material, …).
   final Map<String, String> specs;
+
+  /// Photos for the detail page: [images], or the single [imageUrl] when it
+  /// is a real link (mock products carry no photo).
+  List<String> get gallery => images.isNotEmpty
+      ? images
+      : imageUrl.startsWith('http')
+          ? [imageUrl]
+          : const [];
 
   bool get hasDiscount => oldPrice != null && oldPrice! > price;
 

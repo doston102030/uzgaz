@@ -7,15 +7,31 @@ import '../../../companies/domain/entities/company.dart';
 import '../../../companies/presentation/providers/company_provider.dart';
 import '../../../orders/domain/entities/order.dart';
 
-/// Which company will fulfil the order. Defaults to the best-value one so
-/// checkout is never blocked on a choice the user has not made yet.
+/// Which company will fulfil the order. Defaults to the seller whose
+/// products are in the cart, else the best-value one, so checkout is never
+/// blocked on a choice the user has not made yet.
 final selectedCompanyProvider = StateProvider<Company?>((ref) => null);
+
+/// The seller most of the cart (by quantity) comes from, or null.
+final cartCompanyIdProvider = Provider<String?>((ref) {
+  final counts = <String, int>{};
+  for (final item in ref.watch(cartProvider)) {
+    final id = item.product.companyId;
+    if (id.isNotEmpty) counts[id] = (counts[id] ?? 0) + item.quantity;
+  }
+  if (counts.isEmpty) return null;
+  return counts.entries.reduce((a, b) => b.value > a.value ? b : a).key;
+});
 
 final effectiveCompanyProvider = Provider<Company>((ref) {
   final selected = ref.watch(selectedCompanyProvider);
   if (selected != null) return selected;
   final companies = ref.watch(sortedCompaniesProvider);
   if (companies.isEmpty) return _noCompanyFallback;
+  final cartCompanyId = ref.watch(cartCompanyIdProvider);
+  for (final company in companies) {
+    if (company.id == cartCompanyId) return company;
+  }
   return companies.firstWhere(
     (c) => c.isAvailable,
     orElse: () => companies.first,

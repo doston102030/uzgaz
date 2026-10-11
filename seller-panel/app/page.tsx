@@ -6,10 +6,15 @@ import { SellerHeroBanner } from "@/components/SellerHeroBanner";
 import { StatCard } from "@/components/StatCard";
 import { RevenueChart } from "@/components/RevenueChart";
 import { Badge, BadgeTone } from "@/components/Badge";
-import { orders, revenueByDay } from "@/lib/mock-data";
-import { fetchSellerProducts, fetchSellerStatus } from "@/lib/db";
+import { fetchSellerOrders, fetchSellerProducts, fetchSellerStatus } from "@/lib/db";
 import { formatCurrency, formatCurrencyShort, relativeTime } from "@/lib/format";
-import { SELLER_ORDER_STATUS_LABEL, SellerOrderStatus, SellerProduct } from "@/lib/types";
+import { revenueByDay } from "@/lib/stats";
+import {
+  SELLER_ORDER_STATUS_LABEL,
+  SellerOrder,
+  SellerOrderStatus,
+  SellerProduct,
+} from "@/lib/types";
 import { ClipboardList, Wallet, PackageCheck, ShieldAlert, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
@@ -23,10 +28,22 @@ const ORDER_TONE: Record<SellerOrderStatus, BadgeTone> = {
 
 export default function DashboardPage() {
   const [products, setProducts] = useState<SellerProduct[]>([]);
+  const [orders, setOrders] = useState<SellerOrder[]>([]);
   const [companyName, setCompanyName] = useState("Sotuvchi paneli");
 
   useEffect(() => {
     let cancelled = false;
+    const loadOrders = () =>
+      fetchSellerOrders()
+        .then((rows) => {
+          if (!cancelled) setOrders(rows);
+        })
+        .catch(() => {});
+    void loadOrders();
+    // Yangi buyurtma kelsa, bosh sahifadagi raqam ham o'zi yangilanadi.
+    const timer = setInterval(() => {
+      if (!document.hidden) void loadOrders();
+    }, 15_000);
     fetchSellerProducts()
       .then((rows) => {
         if (!cancelled) setProducts(rows);
@@ -41,23 +58,22 @@ export default function DashboardPage() {
       .catch(() => {});
     return () => {
       cancelled = true;
+      clearInterval(timer);
     };
   }, []);
 
-  const revenue = revenueByDay(14);
+  const revenue = revenueByDay(orders, 14);
   const periodRevenue = revenue.reduce((sum, d) => sum + d.revenue, 0);
   const activeProducts = products.filter((p) => p.moderationStatus === "approved").length;
   const pendingProducts = products.filter((p) => p.moderationStatus === "pending").length;
   const newOrders = orders.filter((o) => o.status === "yangi").length;
 
-  const recentOrders = [...orders]
-    .sort((a, b) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime())
-    .slice(0, 5);
+  const recentOrders = orders.slice(0, 5);
 
   return (
     <>
       <Topbar title="Bosh sahifa" subtitle={`${companyName} faoliyatiga umumiy nazar`} />
-      <main className="flex-1 space-y-6 overflow-y-auto p-6">
+      <main className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6">
         <SellerHeroBanner
           companyName={companyName}
           newOrders={newOrders}
@@ -111,34 +127,38 @@ export default function DashboardPage() {
               Barchasi <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
-          <div className="overflow-x-auto">
-            <table className="mt-4 w-full min-w-[640px] text-left text-sm">
-              <thead>
-                <tr className="border-y border-border text-xs uppercase tracking-wide text-foreground/40">
-                  <th className="px-5 py-2.5 font-medium">Buyurtma</th>
-                  <th className="px-5 py-2.5 font-medium">Xaridor</th>
-                  <th className="px-5 py-2.5 font-medium">Summasi</th>
-                  <th className="px-5 py-2.5 font-medium">Holati</th>
-                  <th className="px-5 py-2.5 font-medium">Vaqti</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentOrders.map((o) => (
-                  <tr key={o.id} className="border-b border-border last:border-0">
-                    <td className="px-5 py-3 font-semibold text-foreground">{o.orderNumber}</td>
-                    <td className="px-5 py-3 text-foreground/70">{o.buyerName}</td>
-                    <td className="px-5 py-3 font-semibold text-foreground">
-                      {formatCurrency(o.total)}
-                    </td>
-                    <td className="px-5 py-3">
+          {recentOrders.length === 0 ? (
+            <p className="px-5 py-10 text-center text-sm text-foreground/40">
+              Hozircha buyurtma yo&apos;q — xaridor ilovadan buyurtma bersa, shu yerda chiqadi.
+            </p>
+          ) : (
+            <ul className="mt-3 divide-y divide-border border-t border-border">
+              {recentOrders.map((o) => (
+                <li key={o.id}>
+                  <Link href="/orders" className="flex items-center gap-3 px-5 py-3 hover:bg-surface-muted/60">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {o.orderNumber}
+                        <span className="font-normal text-foreground/55"> · {o.buyerName}</span>
+                      </p>
+                      <p className="mt-0.5 flex items-center gap-2 text-xs text-foreground/45">
+                        {relativeTime(o.placedAt)}
+                        <span className="sm:hidden">
+                          <Badge label={SELLER_ORDER_STATUS_LABEL[o.status]} tone={ORDER_TONE[o.status]} />
+                        </span>
+                      </p>
+                    </div>
+                    <span className="hidden sm:block">
                       <Badge label={SELLER_ORDER_STATUS_LABEL[o.status]} tone={ORDER_TONE[o.status]} />
-                    </td>
-                    <td className="px-5 py-3 text-foreground/45">{relativeTime(o.placedAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </span>
+                    <p className="shrink-0 text-right text-sm font-semibold text-foreground sm:w-32">
+                      {formatCurrency(o.total)}
+                    </p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </main>
     </>

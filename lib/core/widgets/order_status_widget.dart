@@ -13,6 +13,7 @@ extension OrderStatusUi on OrderStatus {
         OrderStatus.tayyorlanmoqda => Icons.inventory_2_rounded,
         OrderStatus.yolda => Icons.local_shipping_rounded,
         OrderStatus.yetkazildi => Icons.check_circle_rounded,
+        OrderStatus.bekorQilindi => Icons.cancel_rounded,
       };
 
   String get hintUz => switch (this) {
@@ -20,6 +21,7 @@ extension OrderStatusUi on OrderStatus {
         OrderStatus.tayyorlanmoqda => 'Kompaniya buyurtmani tayyorlamoqda',
         OrderStatus.yolda => 'Kuryer sizga yetib kelmoqda',
         OrderStatus.yetkazildi => 'Buyurtma yetkazib berildi',
+        OrderStatus.bekorQilindi => 'Buyurtma bekor qilindi',
       };
 
   PillTone get tone => switch (this) {
@@ -27,6 +29,7 @@ extension OrderStatusUi on OrderStatus {
         OrderStatus.tayyorlanmoqda => PillTone.warning,
         OrderStatus.yolda => PillTone.primary,
         OrderStatus.yetkazildi => PillTone.success,
+        OrderStatus.bekorQilindi => PillTone.danger,
       };
 
   /// The palette colour behind [tone], for icons and progress fills.
@@ -35,11 +38,13 @@ extension OrderStatusUi on OrderStatus {
         OrderStatus.tayyorlanmoqda => c.warning,
         OrderStatus.yolda => c.primary,
         OrderStatus.yetkazildi => c.success,
+        OrderStatus.bekorQilindi => c.danger,
       };
 }
 
-/// Four-segment progress strip (one segment per [OrderStatus]) for order
-/// cards: segments up to and including the current step are filled.
+/// Four-segment progress strip (one segment per [OrderStatusX.flow] step)
+/// for order cards: segments up to and including the current step are
+/// filled; a cancelled order shows an empty strip.
 class OrderProgressBar extends StatelessWidget {
   const OrderProgressBar({super.key, required this.status});
 
@@ -51,7 +56,7 @@ class OrderProgressBar extends StatelessWidget {
     final fill = status.color(c);
     return Row(
       children: [
-        for (int i = 0; i < OrderStatus.values.length; i++) ...[
+        for (int i = 0; i < OrderStatusX.flow.length; i++) ...[
           if (i > 0) const SizedBox(width: AppDimensions.space4),
           Expanded(
             child: AnimatedContainer(
@@ -81,7 +86,7 @@ class OrderStatusTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.palette;
-    const steps = OrderStatus.values;
+    const steps = OrderStatusX.flow;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,7 +209,7 @@ class OrderStatusSteps extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.palette;
-    const steps = OrderStatus.values;
+    const steps = OrderStatusX.flow;
 
     return Column(
       children: [

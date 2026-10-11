@@ -8,8 +8,12 @@ class OrderItem extends Equatable {
     required this.quantity,
     required this.price,
     this.categoryId = 'gazBallon',
+    this.productId = '',
   });
 
+  /// Catalogue id at order time — "Takrorlash" puts the same product back
+  /// in the cart. Empty for items whose product is unknown.
+  final String productId;
   final String productName;
   final int quantity;
   final int price;
@@ -54,6 +58,7 @@ class Order extends Equatable {
     required this.total,
     required this.status,
     required this.deliveryMethod,
+    this.companyId = '',
     this.driver,
     this.address,
     this.deliveryFee = 0,
@@ -68,6 +73,9 @@ class Order extends Equatable {
   final int total;
   final OrderStatus status;
   final DeliveryMethod deliveryMethod;
+
+  /// The seller's id (`orders.company_id`) — who fulfils the order.
+  final String companyId;
   final DriverInfo? driver;
   final String? address;
   final int deliveryFee;
@@ -102,6 +110,7 @@ class Order extends Equatable {
       total: total,
       status: status ?? this.status,
       deliveryMethod: deliveryMethod,
+      companyId: companyId,
       driver: driver ?? this.driver,
       address: address ?? this.address,
       deliveryFee: deliveryFee,

@@ -42,7 +42,7 @@ export function HeroBanner({
           </p>
         </div>
 
-        <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 flex-wrap gap-2">
           <Link
             href="/sellers"
             className="inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-brand-deep shadow-sm transition-transform hover:scale-[1.02]"

@@ -15,6 +15,8 @@ import '../../../../core/widgets/custom_dialog.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/order_status_widget.dart';
 import '../../../../core/widgets/product_illustration.dart';
+import '../../../cart/presentation/providers/cart_provider.dart';
+import '../../../products/presentation/providers/product_provider.dart';
 import '../../domain/entities/order.dart';
 import '../providers/order_provider.dart';
 
@@ -109,13 +111,44 @@ class _OrderHistoryPageState extends ConsumerState<OrderHistoryPage> {
   }
 }
 
-class _OrderCard extends StatelessWidget {
+class _OrderCard extends ConsumerWidget {
   const _OrderCard({required this.order});
 
   final Order order;
 
+  /// Puts the order's products back in the cart at today's catalogue price.
+  void _reorder(BuildContext context, WidgetRef ref) {
+    final cart = ref.read(cartProvider.notifier);
+    var added = 0;
+    for (final item in order.items) {
+      final product = ref.read(productByIdProvider(item.productId));
+      if (product == null || !product.isAvailable) continue;
+      for (var i = 0; i < item.quantity; i++) {
+        cart.add(product);
+      }
+      added++;
+    }
+    if (added == 0) {
+      AppToast.show(
+        context,
+        'Bu mahsulotlar hozir sotuvda yo‘q',
+        tone: ToastTone.warning,
+      );
+      return;
+    }
+    AppToast.show(
+      context,
+      added == order.items.length
+          ? 'Mahsulotlar savatga qo‘shildi'
+          : 'Sotuvdagi mahsulotlar savatga qo‘shildi',
+      tone: ToastTone.success,
+      actionLabel: 'Savat',
+      onAction: () => context.push('/cart'),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final c = context.palette;
     final isActive = order.status.isActive;
     final statusColor = order.status.color(c);
@@ -268,13 +301,7 @@ class _OrderCard extends StatelessWidget {
                   size: AppButtonSize.small,
                   variant: AppButtonVariant.ghost,
                   expand: false,
-                  onPressed: () => AppToast.show(
-                    context,
-                    'Mahsulotlar savatga qo‘shildi',
-                    tone: ToastTone.success,
-                    actionLabel: 'Savat',
-                    onAction: () => context.push('/cart'),
-                  ),
+                  onPressed: () => _reorder(context, ref),
                 ),
             ],
           ),

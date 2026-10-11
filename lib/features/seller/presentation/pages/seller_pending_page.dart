@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,13 +17,45 @@ import '../providers/seller_provider.dart';
 
 /// Shown in place of the seller shell while an application is
 /// [SellerStatus.pending] / [SellerStatus.rejected] / [SellerStatus.suspended].
-/// The moment an admin approves it, this same reactive state flips the
-/// gate in the router and the real dashboard appears — no manual refresh.
-class SellerPendingPage extends ConsumerWidget {
+/// Admins decide in the web panel, so while this page is open it asks
+/// Supabase every few seconds; the moment the company is approved the
+/// reactive state flips the router's gate and the real dashboard appears.
+class SellerPendingPage extends ConsumerStatefulWidget {
   const SellerPendingPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SellerPendingPage> createState() => _SellerPendingPageState();
+}
+
+class _SellerPendingPageState extends ConsumerState<SellerPendingPage> {
+  static const _pollEvery = Duration(seconds: 10);
+
+  Timer? _poll;
+  bool _checking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _poll = Timer.periodic(_pollEvery, (_) => _refresh());
+  }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _refresh() =>
+      ref.read(sellerProfilesProvider.notifier).refresh();
+
+  Future<void> _checkNow() async {
+    setState(() => _checking = true);
+    await _refresh();
+    if (mounted) setState(() => _checking = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final c = context.palette;
     final seller = ref.watch(currentSellerProvider);
 
@@ -100,13 +134,22 @@ class SellerPendingPage extends ConsumerWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      seller.address,
+                      [seller.district, seller.address]
+                          .where((part) => part.isNotEmpty)
+                          .join(', '),
                       style: AppTypography.caption.copyWith(color: c.textSecondary),
                     ),
                   ],
                 ),
               ),
               const Spacer(flex: 3),
+              if (seller.status == SellerStatus.pending)
+                AppButton(
+                  label: 'Holatni tekshirish',
+                  icon: Icons.sync_rounded,
+                  isLoading: _checking,
+                  onPressed: _checkNow,
+                ),
               if (seller.status == SellerStatus.rejected)
                 AppButton(
                   label: 'Qaytadan yuborish',
