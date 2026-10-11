@@ -96,7 +96,11 @@ class OnboardingFilm extends StatelessWidget {
             style: filmText(12, color: filmInk),
             child: ColoredBox(
               color: dark ? filmInk : filmPaper,
+              // Art that reaches past the canvas (the red disc, the
+              // finale's burst, the truck driving in) runs on into the
+              // page, which wears the same colour — no hard cut line.
               child: Stack(
+                clipBehavior: Clip.none,
                 children: [
                   Positioned.fill(child: ExcludeSemantics(child: art)),
                   Positioned.fill(
@@ -232,7 +236,7 @@ Widget _serial(String text, double t, {Color color = _muted}) {
       dy: 13,
       child: Text(text,
           style:
-              filmText(8, weight: FontWeight.w700, color: color, spacing: 1.6)),
+              filmText(9, weight: FontWeight.w700, color: color, spacing: 1.6)),
     ),
   );
 }
@@ -245,7 +249,8 @@ Widget _footer(String text, {Color color = _muted}) {
     child: Text(
       text,
       textAlign: TextAlign.center,
-      style: filmText(7, weight: FontWeight.w500, color: color, spacing: 1.4),
+      style:
+          filmText(8.5, weight: FontWeight.w500, color: color, spacing: 1.3),
     ),
   );
 }
@@ -397,6 +402,7 @@ class _QuestionScene extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(
+      clipBehavior: Clip.none,
       children: [
         _serial('01 / SAVOL', t),
         Positioned(
@@ -523,13 +529,16 @@ class _AdviceScene extends StatelessWidget {
     final typing = _at(t, 650, 150, Curves.easeOut) *
         (1 - _at(t, 1150, 100, Curves.linear));
     return Stack(
+      clipBehavior: Clip.none,
       children: [
         _serial('02 / TAVSIYA', t),
+        // Portraits, then the two messages, fill the frame down to the
+        // footer: no dead band at the bottom, no bubble glued to a photo.
         Positioned(
-          left: 27,
-          top: 230,
-          width: 160,
-          height: 247,
+          left: 24,
+          top: 214,
+          width: 164,
+          height: 252,
           child: _In(
             _at(t, 120, 650),
             dy: 35,
@@ -538,10 +547,10 @@ class _AdviceScene extends StatelessWidget {
           ),
         ),
         Positioned(
-          right: 27,
-          top: 230,
-          width: 160,
-          height: 247,
+          right: 24,
+          top: 214,
+          width: 164,
+          height: 252,
           child: _In(
             _at(t, 200, 650),
             dy: 35,
@@ -550,8 +559,8 @@ class _AdviceScene extends StatelessWidget {
           ),
         ),
         Positioned(
-          left: 187,
-          top: 326,
+          left: 184,
+          top: 316,
           child: _In(
             _at(t, 450, 700),
             scale: .5,
@@ -562,7 +571,7 @@ class _AdviceScene extends StatelessWidget {
         ),
         Positioned(
           left: 24,
-          top: 481,
+          top: 482,
           child: _In(
             _at(t, 350, 500),
             dy: 17,
@@ -576,12 +585,12 @@ class _AdviceScene extends StatelessWidget {
         if (typing > 0)
           Positioned(
             right: 24,
-            top: 570,
+            top: 576,
             child: Opacity(opacity: typing, child: _Typing(t)),
           ),
         Positioned(
           right: 24,
-          top: 570,
+          top: 576,
           child: _In(
             _at(t, 1200, 500),
             dy: 17,
@@ -596,12 +605,12 @@ class _AdviceScene extends StatelessWidget {
         ),
         _footer('BIR TAVSIYA. BIR YECHIM.'),
         _headline(t,
-            top: 113,
+            top: 110,
             first: 'QO‘SHNINGIZ',
             accent: 'YECHIMNI BILADI.',
-            size: 32,
-            height: 1.09,
-            spacing: -1.5),
+            size: 42,
+            height: 1.02,
+            spacing: -1.9),
       ],
     );
   }
@@ -641,7 +650,7 @@ class _DialoguePortrait extends StatelessWidget {
               border: Border(top: BorderSide(color: filmInk)),
             ),
             child: Text(caption,
-                style: filmText(8, weight: FontWeight.w700, spacing: 1)),
+                style: filmText(9, weight: FontWeight.w700, spacing: 1.2)),
           ),
         ],
       ),
@@ -665,12 +674,12 @@ class _Chat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fg = accent ? Colors.white : filmInk;
-    final body = filmText(13, color: fg, height: 17 / 13);
+    final body = filmText(15, color: fg, height: 20 / 15, spacing: -.1);
     return Stack(
       children: [
         Container(
-          constraints: const BoxConstraints(maxWidth: 285),
-          padding: EdgeInsets.fromLTRB(15, 13, accent ? 31 : 15, 13),
+          constraints: const BoxConstraints(maxWidth: 270),
+          padding: EdgeInsets.fromLTRB(16, 12, accent ? 32 : 18, 13),
           decoration: BoxDecoration(
             color: accent ? filmRed : const Color(0xFFFFFDF7),
             border: accent ? null : Border.all(color: const Color(0xFFC5CBBB)),
@@ -686,11 +695,11 @@ class _Chat extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label,
-                  style: filmText(6,
+                  style: filmText(8,
                       weight: FontWeight.w700,
-                      color: fg.withValues(alpha: .65),
+                      color: fg.withValues(alpha: .7),
                       spacing: 1.2)),
-              const SizedBox(height: 6),
+              const SizedBox(height: 5),
               Text.rich(
                 TextSpan(text: message, style: body, children: [
                   if (strong != null)
@@ -706,13 +715,13 @@ class _Chat extends StatelessWidget {
         ),
         if (accent)
           const Positioned(
-            right: 9,
-            bottom: 10,
+            right: 10,
+            bottom: 11,
             child: Row(
               children: [
-                FilmGlyph.check(size: 9, color: Color(0xFFFFE3D3), weight: 2),
+                FilmGlyph.check(size: 10, color: Color(0xFFFFE3D3), weight: 2),
                 SizedBox(width: 1),
-                FilmGlyph.check(size: 9, color: Color(0xFFFFE3D3), weight: 2),
+                FilmGlyph.check(size: 10, color: Color(0xFFFFE3D3), weight: 2),
               ],
             ),
           ),
@@ -776,6 +785,7 @@ class _AppScene extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(
+      clipBehavior: Clip.none,
       children: [
         Positioned(
           left: -108,
@@ -1355,6 +1365,7 @@ class _RoadScene extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(
+      clipBehavior: Clip.none,
       children: [
         _serial('04 / YO‘LDA', t),
         _headline(t,
@@ -1597,7 +1608,7 @@ class _Route extends StatelessWidget {
           ),
         ),
         Text('GAZ MASHINASIDA YETKAZISH',
-            style: filmText(6, weight: FontWeight.w700, spacing: 1.4)),
+            style: filmText(7.5, weight: FontWeight.w700, spacing: 1.4)),
       ],
     );
   }
@@ -1613,6 +1624,7 @@ class _DeliveryScene extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(
+      clipBehavior: Clip.none,
       children: [
         _serial('05 / YETKAZILDI', t),
         Positioned(
@@ -1688,8 +1700,8 @@ class _DeliveryScene extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('BUYURTMANGIZ',
-                            style: filmText(6,
-                                color: const Color(0xFF7D8578), spacing: 1.4)),
+                            style: filmText(7.5,
+                                color: const Color(0xFF6F7869), spacing: 1.4)),
                         const SizedBox(height: 4),
                         Text('Yetkazib berildi!',
                             style: filmText(17,
@@ -1718,6 +1730,7 @@ class _FinaleScene extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(
+      clipBehavior: Clip.none,
       children: [
         Positioned.fill(
           child: CustomPaint(

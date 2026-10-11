@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/typography.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/utils/haptics.dart';
 import '../../../../core/widgets/app_tappable.dart';
 import '../../../../core/widgets/custom_dialog.dart';
 import '../../../../core/widgets/empty_state.dart';
@@ -282,6 +283,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                   borderRadius: BorderRadius.circular(14),
                   onPressed: product.isAvailable
                       ? () {
+                          AppHaptics.tap();
                           for (var i = 0; i < _quantity; i++) {
                             ref.read(cartProvider.notifier).add(product);
                           }

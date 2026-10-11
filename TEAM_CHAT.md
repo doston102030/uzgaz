@@ -1696,3 +1696,44 @@ Protection pullik, shuning uchun yangi `admin-panel/proxy.ts` (Basic Auth): faqa
   lokal holat (commit qilinmaganlar va Codex'ning xizmat turlari ishi ham).
 - Admin "Tizim" sahifasidagi SQL nusxalash Vercel'da ishlamaydi (`../supabase` papkasini o'qiydi) — lokalda ishlaydi.
 - Eslatma: hozir lokal 3000/3001/8090 portlarida hech narsa tinglamayapti (men to'xtatmadim, qayta ham yoqmadim).
+
+### Claude — commit + push (2026-10-11)
+Doston roziligi bilan barcha o'zgarishlar commit qilinib `feat/supabase-panels-and-ui` ga push qilindi:
+`c4533f5` (panellar, ilova galereyasi, SQL — Codex'ning `service_category_grid.dart` ishi ham kirdi) va
+`e446767` (`admin-panel/proxy.ts`). Yangi ishni shu commit'lar ustidan davom ettiring.
+
+### Claude (dizayn) — onboarding + kirish sahifasi, vibratsiya (2026-10-11)
+Doston (2 ta skrinshot): market qismidagi xatolarni tuzatish, onboarding ("02 / Tavsiya") va kirish
+(Alanga) sahifalari dizaynini yaxshilash, mobilga moslash, har bir bosishda vibratsiya.
+Fayllar: `lib/features/auth/**` (onboarding_page, onboarding_film, login_page, login_brand_header),
+kerak bo'lsa `lib/core/widgets/**` (haptics/tugmalar), `test/onboarding_test.dart` (oldindan yiqilayotgan testlar).
+Router, pubspec, `lib/features/map/**` ga tegmayman.
+
+### Claude (dizayn) — natija: onboarding, kirish, vibratsiya, xatolar (2026-10-11)
+`flutter analyze lib test` — toza (faqat `responsive_catalog_test.dart:130` dagi eski info). Testlar **91/91**
+(onboarding 23/23 — avval 12 tasi yiqilardi). Release web build + headless Chrome (Android va iPhone rejimi) bilan sinaldi.
+
+**Onboarding** (`onboarding_page.dart`, `onboarding_film.dart`):
+- Sahifa foni endi sahnaning o'z rangi (qog'oz / qora) — "karta ichida karta" va soya yo'q, telefonda film
+  chetdan-chetga (story kabi). Qora sahnalarda pastki panel teskari rangga o'tadi, status bar ham.
+- "02 / Tavsiya": sarlavha 32 → 42, suratlar balandroq, chat pufaklari 13 → 15 px matn, yorliq 6 → 8 px;
+  pufak suratga yopishib qolmaydi, pastdagi bo'sh joy yo'qoldi. Mayda yozuvlar (seriya, footer, yorliqlar) kattalashdi.
+- Qizil doira / nurlar / mashina keng oynada film chetida kesilmaydi (fon bir xil rangda davom etadi).
+- Xato: "O'tkazib yuborish" tor/landshaft ekranda 17 px gacha kichrayardi → endi doim 48 px, faqat yozuv kichrayadi.
+**Kirish** (`login_page.dart`, `login_brand_header.dart`): "Hisobingiz yo'qmi? Ro'yxatdan o'tish" bitta qatorda;
+sarlavha krem foni telefon chelkasi ostigacha (oldin kulrang chiziq qolardi); qorong'i rejimda krem yumshoqroq;
+to'lqin ustida yengil soya; logo ohista paydo bo'ladi; shartlar matnida hujjat nomlari ajralib turadi.
+**Xato (core)** `app_button.dart`: `expand: false` tugma Wrap/Column ichida baribir to'liq kenglikka cho'zilardi
+(sabab — `alignment`). Ta'sir: kirish/ro'yxatdan o'tish qatori, bo'sh-holat tugmalari endi ixcham. Row ichidagilar o'zgarmadi.
+**Vibratsiya**: yangi `lib/core/utils/web_buzz*.dart` — iPhone Safari'da `navigator.vibrate` yo'q, shuning uchun
+iOS 18+ "switch" usuli qo'shildi (brauzerda chaqiruv tasdiqlandi; haqiqiy iPhone'da sinalmagan). Vibratsiyasiz
+qolgan joylar ulandi: kategoriya strelkalari, "Savatga qo'shish" (mahsulot sahifasi), galereya (ochish, miniatyura),
+admin komissiya slayderi.
+Router, pubspec, xaritaga tegilmadi. Commit qilinmadi; Vercel qayta yuklanmadi (Doston ruxsati kerak).
+
+### Claude (dizayn) — ilovani Vercel'ga qayta yuklash (2026-10-11)
+Doston ruxsati bilan: yuqoridagi onboarding/kirish/vibratsiya o'zgarishlari bilan release build
+`gaz-energiya-app` ga production deploy qilinadi (scratchpad nusxasidan, repoga `.vercel/` tushmaydi).
+Natija: https://gaz-energiya-app.vercel.app yangilandi — `main.dart.js` xeshi lokal build bilan bir xil.
+Jonli saytda headless Chrome: Android rejimida 4 bosish → 4 × `vibrate(20)`, iPhone rejimida 4 × switch-tick,
+sahifa xatosi 0. `vercel link` yaratgan `.env.local` (OIDC token) yuklashdan oldin o'chirildi — saytda 404.

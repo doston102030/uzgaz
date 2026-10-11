@@ -128,7 +128,9 @@ class AppButton extends StatelessWidget {
         width: size == AppButtonSize.small ? 18 : 22,
         child: CircularProgressIndicator(strokeWidth: 2.4, color: foreground),
       );
-      content = Center(child: content);
+      content = expand
+          ? Center(child: content)
+          : Row(mainAxisSize: MainAxisSize.min, children: [content]);
     }
 
     final button = AnimatedOpacity(
@@ -147,7 +149,11 @@ class AppButton extends StatelessWidget {
               AppButtonSize.small => AppDimensions.space14,
             },
           ),
-          alignment: Alignment.center,
+          // An alignment would make the box fill every inch it is offered
+          // — in a Wrap or Column that turned `expand: false` buttons into
+          // full-width bars (the login's "Ro‘yxatdan o‘tish" fell onto its
+          // own line). The content Row centres itself vertically instead.
+          alignment: expand ? Alignment.center : null,
           decoration: BoxDecoration(
             color: _disabled && variant == AppButtonVariant.primary ? c.surfaceMuted : bg,
             gradient: _disabled && variant == AppButtonVariant.primary ? null : gradient,

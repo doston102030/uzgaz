@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/theme/colors.dart';
 import '../constants/app_constants.dart';
+import '../utils/haptics.dart';
 import 'app_tappable.dart';
 import 'category_artwork.dart';
 
@@ -61,6 +62,7 @@ class _CategoryFilterBarState extends State<CategoryFilterBar> {
 
   void _move(double direction) {
     if (!_scroll.hasClients) return;
+    AppHaptics.tap();
     final target =
         (_scroll.offset + direction * _scroll.position.viewportDimension * .8)
             .clamp(0.0, _scroll.position.maxScrollExtent);

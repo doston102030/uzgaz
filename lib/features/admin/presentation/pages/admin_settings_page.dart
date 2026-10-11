@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/dimensions.dart';
 import '../../../../app/theme/typography.dart';
+import '../../../../core/utils/haptics.dart';
 import '../../../../core/widgets/app_nav_bar.dart';
 import '../../../../core/widgets/app_surface.dart';
 import '../../../../core/widgets/app_switch.dart';
@@ -78,7 +79,10 @@ class AdminSettingsPage extends ConsumerWidget {
                           divisions: 20,
                           label: '${commission.toStringAsFixed(0)}%',
                           activeColor: c.primary,
-                          onChanged: (v) => ref.read(commissionRateProvider.notifier).state = v,
+                          onChanged: (v) {
+                            AppHaptics.selection();
+                            ref.read(commissionRateProvider.notifier).state = v;
+                          },
                         ),
                       ],
                     ),

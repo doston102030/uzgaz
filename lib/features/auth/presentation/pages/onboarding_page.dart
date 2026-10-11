@@ -19,9 +19,6 @@ class OnboardingPage extends StatefulWidget {
   State<OnboardingPage> createState() => _OnboardingPageState();
 }
 
-/// The creative's page colour around the film.
-const _stage = Color(0xFFE9E6DF);
-
 class _OnboardingPageState extends State<OnboardingPage>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _clock = AnimationController(
@@ -178,6 +175,10 @@ class _OnboardingPageState extends State<OnboardingPage>
   @override
   Widget build(BuildContext context) {
     final last = _scene == _last;
+    // The page wears the scene's own colour, so the film reads as the
+    // whole screen (a story) instead of a card on a card. Scenes cut
+    // instantly, and so does the page — no seam during a cut.
+    final dark = FilmTimeline.isDark(_scene);
     _FilmStage film(EdgeInsets padding) => _FilmStage(
           clock: _clock,
           scene: _scene,
@@ -189,6 +190,7 @@ class _OnboardingPageState extends State<OnboardingPage>
           onDragEnd: _onDragEnd,
         );
     final controls = _Controls(
+      dark: dark,
       label: last ? 'Boshlash' : 'Davom etish',
       onBack: _scene > 0 ? () => _step(-1) : null,
       onNext: _next,
@@ -199,9 +201,9 @@ class _OnboardingPageState extends State<OnboardingPage>
     );
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.dark,
+      value: dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
-        backgroundColor: _stage,
+        backgroundColor: dark ? filmInk : filmPaper,
         body: SafeArea(
           child: CallbackShortcuts(
             bindings: {
@@ -248,6 +250,8 @@ class _OnboardingPageState extends State<OnboardingPage>
                   // width (rather than letting the film size itself and
                   // controls stretch independently) so a short window
                   // never leaves them as two mismatched-width cards.
+                  // The film runs edge to edge: it has its own margins,
+                  // and the page around it is the same colour.
                   final groupWidth = math.min(
                     box.maxWidth,
                     math.min(
@@ -264,10 +268,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Flexible(
-                            child: film(
-                                const EdgeInsets.fromLTRB(12, 10, 12, 0)),
-                          ),
+                          Flexible(child: film(EdgeInsets.zero)),
                           controls,
                         ],
                       ),
@@ -317,50 +318,38 @@ class _FilmStage extends StatelessWidget {
         builder: (context, box) {
           // Film pixels → screen pixels.
           final s = box.maxWidth / OnboardingFilm.width;
-          final radius = BorderRadius.circular(24 * s);
           return Stack(
+            clipBehavior: Clip.none,
             children: [
+              // No card, no shadow: the page around the film is the
+              // film's own colour, so its edges simply disappear.
               Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: radius,
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0x2017221B),
-                        offset: Offset(0, 20 * s),
-                        blurRadius: 55 * s,
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: radius,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onHorizontalDragStart: (_) => onDragStart(),
-                      onHorizontalDragUpdate: (details) =>
-                          onDragUpdate(details.delta.dx),
-                      onHorizontalDragEnd: onDragEnd,
-                      child: Semantics(
-                        container: true,
-                        liveRegion: true,
-                        label: 'Kirish filmi, ${scene + 1}-sahna, jami '
-                            '${FilmTimeline.sceneCount} ta. '
-                            '${FilmTimeline.descriptions[scene]}',
-                        child: AnimatedBuilder(
-                          animation: clock,
-                          builder: (context, _) => OnboardingFilm(
-                            time: clock.value * FilmTimeline.total,
-                            reducedMotion: reducedMotion,
-                          ),
-                        ),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onHorizontalDragStart: (_) => onDragStart(),
+                  onHorizontalDragUpdate: (details) =>
+                      onDragUpdate(details.delta.dx),
+                  onHorizontalDragEnd: onDragEnd,
+                  child: Semantics(
+                    container: true,
+                    liveRegion: true,
+                    label: 'Kirish filmi, ${scene + 1}-sahna, jami '
+                        '${FilmTimeline.sceneCount} ta. '
+                        '${FilmTimeline.descriptions[scene]}',
+                    child: AnimatedBuilder(
+                      animation: clock,
+                      builder: (context, _) => OnboardingFilm(
+                        time: clock.value * FilmTimeline.total,
+                        reducedMotion: reducedMotion,
                       ),
                     ),
                   ),
                 ),
               ),
               if (onSkip != null)
-                // Right of the brand name; on a small film (landscape)
-                // the button shrinks rather than run into it.
+                // Right of the brand name. On a small film (landscape)
+                // only the label shrinks; the button stays 48 px tall
+                // so it is always an easy target.
                 Positioned(
                   top: 52 * s - 24,
                   left: 160 * s,
@@ -368,12 +357,9 @@ class _FilmStage extends StatelessWidget {
                   height: 48,
                   child: Align(
                     alignment: Alignment.centerRight,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: _SkipButton(
-                        dark: FilmTimeline.isDark(scene),
-                        onPressed: onSkip,
-                      ),
+                    child: _SkipButton(
+                      dark: FilmTimeline.isDark(scene),
+                      onPressed: onSkip,
                     ),
                   ),
                 ),
@@ -414,16 +400,19 @@ class _SkipButton extends StatelessWidget {
           shape: const StadiumBorder(),
           textStyle: filmText(12.5, weight: FontWeight.w600),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('O‘tkazib yuborish'),
-            const SizedBox(width: 4),
-            Transform.rotate(
-              angle: -math.pi / 4,
-              child: FilmGlyph.arrow(size: 18, color: color),
-            ),
-          ],
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('O‘tkazib yuborish'),
+              const SizedBox(width: 4),
+              Transform.rotate(
+                angle: -math.pi / 4,
+                child: FilmGlyph.arrow(size: 18, color: color),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -434,6 +423,7 @@ enum _Playback { pause, play, replay }
 
 class _Controls extends StatelessWidget {
   const _Controls({
+    required this.dark,
     required this.label,
     required this.onBack,
     required this.onNext,
@@ -446,6 +436,8 @@ class _Controls extends StatelessWidget {
   /// any scale — used to size the film to match this bar's width.
   static const height = 56.0 + 14 + 12;
 
+  /// On an ink scene the bar inverts, so it never sinks into the page.
+  final bool dark;
   final String label;
   final VoidCallback? onBack;
   final VoidCallback onNext;
@@ -458,12 +450,13 @@ class _Controls extends StatelessWidget {
   Widget build(BuildContext context) {
     final playback = this.playback;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 12),
       child: MediaQuery.withClampedTextScaling(
         maxScaleFactor: 1.6,
         child: Row(
           children: [
             _RoundButton(
+              dark: dark,
               icon: Icons.arrow_back_rounded,
               tooltip: 'Oldingi sahna',
               onPressed: onBack,
@@ -473,8 +466,8 @@ class _Controls extends StatelessWidget {
               child: FilledButton(
                 onPressed: onNext,
                 style: FilledButton.styleFrom(
-                  backgroundColor: filmInk,
-                  foregroundColor: filmPaper,
+                  backgroundColor: dark ? filmPaper : filmInk,
+                  foregroundColor: dark ? filmInk : filmPaper,
                   minimumSize: const Size(0, 56),
                   padding: const EdgeInsets.fromLTRB(22, 12, 18, 12),
                   shape: const StadiumBorder(),
@@ -499,6 +492,7 @@ class _Controls extends StatelessWidget {
             if (playback != null) ...[
               const SizedBox(width: 10),
               _RoundButton(
+                dark: dark,
                 icon: switch (playback) {
                   _Playback.pause => Icons.pause_rounded,
                   _Playback.play => Icons.play_arrow_rounded,
@@ -521,11 +515,13 @@ class _Controls extends StatelessWidget {
 
 class _RoundButton extends StatelessWidget {
   const _RoundButton({
+    required this.dark,
     required this.icon,
     required this.tooltip,
     required this.onPressed,
   });
 
+  final bool dark;
   final IconData icon;
   final String tooltip;
   final VoidCallback? onPressed;
@@ -538,11 +534,14 @@ class _RoundButton extends StatelessWidget {
       iconSize: 24,
       style: IconButton.styleFrom(
         fixedSize: const Size.square(56),
-        backgroundColor: const Color(0x99FFFFFF),
-        foregroundColor: filmInk,
-        disabledBackgroundColor: const Color(0x40FFFFFF),
-        disabledForegroundColor: const Color(0x5517221B),
-        side: const BorderSide(color: Color(0xFFCBD0C2)),
+        backgroundColor: dark ? const Color(0x14F5F1E8) : Colors.white,
+        foregroundColor: dark ? filmPaper : filmInk,
+        disabledBackgroundColor: Colors.transparent,
+        disabledForegroundColor:
+            dark ? const Color(0x55F5F1E8) : const Color(0x5517221B),
+        side: BorderSide(
+          color: dark ? const Color(0x40F5F1E8) : const Color(0xFFD9D4C7),
+        ),
         shape: const CircleBorder(),
       ),
       icon: Icon(icon),

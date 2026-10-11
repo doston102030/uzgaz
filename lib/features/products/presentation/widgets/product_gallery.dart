@@ -8,6 +8,7 @@ import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/dimensions.dart';
 import '../../../../app/theme/motion.dart';
 import '../../../../app/theme/typography.dart';
+import '../../../../core/utils/haptics.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/product_illustration.dart';
 import '../../../../core/widgets/app_tappable.dart';
@@ -94,6 +95,7 @@ class _ProductGalleryState extends State<ProductGallery> {
 
   void _openViewer() {
     if (_viewerOpen || widget.images.isEmpty) return;
+    AppHaptics.tap();
     final images = List<String>.of(widget.images);
     _hold();
     _viewerOpen = true;
@@ -509,7 +511,10 @@ class _Thumb extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.palette;
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        AppHaptics.selection();
+        onTap();
+      },
       child: AnimatedContainer(
         duration: AppMotion.fast,
         width: 56,

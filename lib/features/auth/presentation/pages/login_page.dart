@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -80,212 +81,249 @@ class _LoginPageState extends ConsumerState<LoginPage>
     // One screen, no scrolling: the header takes whatever height the form
     // leaves. It only scrolls when even the header's minimum doesn't fit
     // (a very short window, or the on-screen keyboard is up).
-    return Scaffold(
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, viewport) => SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: viewport.maxHeight),
-              child: IntrinsicHeight(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Expanded(child: LoginBrandHeader()),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: AppDimensions.space24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                              height: gap(AppDimensions.space20,
-                                  AppDimensions.space12)),
-                          FadeInUp(
-                            delay: const Duration(milliseconds: 60),
-                            child: Text(
-                              'Xush kelibsiz',
-                              style: AppTypography.largeTitle.copyWith(
-                                color: c.isDark
-                                    ? c.textPrimary
-                                    : AppColors.primaryDeep,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                              height: gap(
-                                  AppDimensions.space8, AppDimensions.space6)),
-                          FadeInUp(
-                            delay: const Duration(milliseconds: 110),
-                            child: Text(
-                              'Telefon raqamingizni kiriting. Tasdiqlash kodi SMS '
-                              'orqali yuboriladi.',
-                              style: AppTypography.callout.copyWith(
-                                color: c.textSecondary,
-                                height: 1.5,
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                              height: gap(AppDimensions.space24,
-                                  AppDimensions.space16)),
-                          AnimatedBuilder(
-                            animation: _shakeController,
-                            builder: (context, child) {
-                              final t = _shakeController.value;
-                              final dx =
-                                  math.sin(t * math.pi * 3) * 10 * (1 - t);
-                              return Transform.translate(
-                                offset: Offset(dx, 0),
-                                child: child,
-                              );
-                            },
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                FadeInUp(
-                                  delay: const Duration(milliseconds: 160),
-                                  child: AppTextField(
-                                    controller: _phoneController,
-                                    label: 'Telefon raqami',
-                                    hint: '90 123 45 67',
-                                    prefixText: '+998',
-                                    keyboardType: TextInputType.phone,
-                                    textInputAction: TextInputAction.done,
-                                    inputFormatters: [UzPhoneInputFormatter()],
-                                    onChanged: (_) {
-                                      if (_error != null) {
-                                        setState(() => _error = null);
-                                      }
-                                    },
-                                    onSubmitted: (_) => _submit(),
-                                  ),
+    //
+    // The top safe area belongs to the header: its cream runs up under
+    // the status bar / notch instead of leaving a grey strip above it, so
+    // the status bar icons stay dark in both themes.
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        body: SafeArea(
+          top: false,
+          child: LayoutBuilder(
+            builder: (context, viewport) => SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: viewport.maxHeight),
+                child: IntrinsicHeight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Expanded(child: LoginBrandHeader()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: AppDimensions.space24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                                height: gap(AppDimensions.space20,
+                                    AppDimensions.space12)),
+                            FadeInUp(
+                              delay: const Duration(milliseconds: 60),
+                              child: Text(
+                                'Xush kelibsiz',
+                                style: AppTypography.largeTitle.copyWith(
+                                  color: c.isDark
+                                      ? c.textPrimary
+                                      : AppColors.primaryDeep,
+                                  fontWeight: FontWeight.w800,
                                 ),
-                                // Fixed slot: the error appearing never shifts the
-                                // layout (which would also resize the header).
-                                SizedBox(
-                                  height: gap(28, 26),
-                                  child: AnimatedSwitcher(
-                                    duration: AppMotion.fast,
-                                    layoutBuilder: (current, previous) => Stack(
-                                      alignment: Alignment.topLeft,
-                                      children: [
-                                        ...previous,
-                                        if (current != null) current,
+                              ),
+                            ),
+                            SizedBox(
+                                height: gap(AppDimensions.space8,
+                                    AppDimensions.space6)),
+                            FadeInUp(
+                              delay: const Duration(milliseconds: 110),
+                              child: Text(
+                                'Telefon raqamingizni kiriting. Tasdiqlash kodi SMS '
+                                'orqali yuboriladi.',
+                                style: AppTypography.callout.copyWith(
+                                  color: c.textSecondary,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                                height: gap(AppDimensions.space24,
+                                    AppDimensions.space16)),
+                            AnimatedBuilder(
+                              animation: _shakeController,
+                              builder: (context, child) {
+                                final t = _shakeController.value;
+                                final dx =
+                                    math.sin(t * math.pi * 3) * 10 * (1 - t);
+                                return Transform.translate(
+                                  offset: Offset(dx, 0),
+                                  child: child,
+                                );
+                              },
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  FadeInUp(
+                                    delay: const Duration(milliseconds: 160),
+                                    child: AppTextField(
+                                      controller: _phoneController,
+                                      label: 'Telefon raqami',
+                                      hint: '90 123 45 67',
+                                      prefixText: '+998',
+                                      keyboardType: TextInputType.phone,
+                                      textInputAction: TextInputAction.done,
+                                      inputFormatters: [
+                                        UzPhoneInputFormatter()
                                       ],
+                                      onChanged: (_) {
+                                        if (_error != null) {
+                                          setState(() => _error = null);
+                                        }
+                                      },
+                                      onSubmitted: (_) => _submit(),
                                     ),
-                                    child: _error == null
-                                        ? const SizedBox.shrink()
-                                        : Padding(
-                                            key: ValueKey(_error),
-                                            padding: const EdgeInsets.only(
-                                                top: AppDimensions.space6,
-                                                left: 4),
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                    Icons.error_outline_rounded,
-                                                    size: 14,
-                                                    color: c.danger),
-                                                const SizedBox(width: 4),
-                                                Flexible(
-                                                  child: Text(
-                                                    _error!,
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style: AppTypography.caption
-                                                        .copyWith(
-                                                            color: c.danger),
+                                  ),
+                                  // Fixed slot: the error appearing never shifts the
+                                  // layout (which would also resize the header).
+                                  SizedBox(
+                                    height: gap(28, 26),
+                                    child: AnimatedSwitcher(
+                                      duration: AppMotion.fast,
+                                      layoutBuilder: (current, previous) =>
+                                          Stack(
+                                        alignment: Alignment.topLeft,
+                                        children: [
+                                          ...previous,
+                                          if (current != null) current,
+                                        ],
+                                      ),
+                                      child: _error == null
+                                          ? const SizedBox.shrink()
+                                          : Padding(
+                                              key: ValueKey(_error),
+                                              padding: const EdgeInsets.only(
+                                                  top: AppDimensions.space6,
+                                                  left: 4),
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                      Icons
+                                                          .error_outline_rounded,
+                                                      size: 14,
+                                                      color: c.danger),
+                                                  const SizedBox(width: 4),
+                                                  Flexible(
+                                                    child: Text(
+                                                      _error!,
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: AppTypography
+                                                          .caption
+                                                          .copyWith(
+                                                              color: c.danger),
+                                                    ),
                                                   ),
-                                                ),
-                                              ],
+                                                ],
+                                              ),
                                             ),
-                                          ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            FadeInUp(
+                              delay: const Duration(milliseconds: 210),
+                              child: AppButton(
+                                label: 'Davom etish',
+                                trailingIcon: Icons.arrow_forward_rounded,
+                                isLoading: _loading,
+                                onPressed: _submit,
+                              ),
+                            ),
+                            SizedBox(
+                                height: gap(AppDimensions.space16,
+                                    AppDimensions.space10)),
+                            Row(
+                              children: [
+                                Expanded(child: Divider(color: c.border)),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: AppDimensions.space12),
+                                  child: Text(
+                                    'yoki',
+                                    style: AppTypography.caption
+                                        .copyWith(color: c.textTertiary),
                                   ),
                                 ),
+                                Expanded(child: Divider(color: c.border)),
                               ],
                             ),
-                          ),
-                          FadeInUp(
-                            delay: const Duration(milliseconds: 210),
-                            child: AppButton(
-                              label: 'Davom etish',
-                              trailingIcon: Icons.arrow_forward_rounded,
-                              isLoading: _loading,
-                              onPressed: _submit,
-                            ),
-                          ),
-                          SizedBox(
-                              height: gap(AppDimensions.space16,
-                                  AppDimensions.space10)),
-                          Row(
-                            children: [
-                              Expanded(child: Divider(color: c.border)),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: AppDimensions.space12),
-                                child: Text(
-                                  'yoki',
-                                  style: AppTypography.caption
-                                      .copyWith(color: c.textTertiary),
-                                ),
+                            SizedBox(
+                                height: gap(AppDimensions.space16,
+                                    AppDimensions.space10)),
+                            _GuestButton(onPressed: () => context.go('/home')),
+                            SizedBox(
+                                height: gap(AppDimensions.space16,
+                                    AppDimensions.space8)),
+                            // One line: the question and its answer belong
+                            // together (it wraps only on a very narrow
+                            // screen or with very large text).
+                            Center(
+                              child: Wrap(
+                                alignment: WrapAlignment.center,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  Text(
+                                    'Hisobingiz yo‘qmi?',
+                                    style: AppTypography.footnote
+                                        .copyWith(color: c.textSecondary),
+                                  ),
+                                  AppButton(
+                                    label: 'Ro‘yxatdan o‘tish',
+                                    variant: AppButtonVariant.text,
+                                    size: AppButtonSize.small,
+                                    expand: false,
+                                    onPressed: () => context.push('/register'),
+                                  ),
+                                ],
                               ),
-                              Expanded(child: Divider(color: c.border)),
-                            ],
-                          ),
-                          SizedBox(
-                              height: gap(AppDimensions.space16,
-                                  AppDimensions.space10)),
-                          _GuestButton(onPressed: () => context.go('/home')),
-                          SizedBox(
-                              height: gap(
-                                  AppDimensions.space16, AppDimensions.space8)),
-                          Center(
-                            child: Wrap(
-                              alignment: WrapAlignment.center,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                Text(
-                                  'Hisobingiz yo‘qmi?',
-                                  style: AppTypography.footnote
-                                      .copyWith(color: c.textSecondary),
-                                ),
-                                AppButton(
-                                  label: 'Ro‘yxatdan o‘tish',
-                                  variant: AppButtonVariant.text,
-                                  size: AppButtonSize.small,
-                                  expand: false,
-                                  onPressed: () => context.push('/register'),
-                                ),
-                              ],
                             ),
-                          ),
-                          SizedBox(
-                              height: gap(
-                                  AppDimensions.space8, AppDimensions.space4)),
-                          Center(
-                            child: Text(
-                              'Davom etish orqali foydalanish shartlari va\n'
-                              'maxfiylik siyosatiga rozilik bildirasiz.',
-                              textAlign: TextAlign.center,
-                              style: AppTypography.caption
-                                  .copyWith(color: c.textTertiary),
-                            ),
-                          ),
-                          SizedBox(
-                              height: gap(AppDimensions.space16,
-                                  AppDimensions.space10)),
-                        ],
+                            SizedBox(
+                                height: gap(AppDimensions.space4,
+                                    AppDimensions.space2)),
+                            const Center(child: _TermsNote()),
+                            SizedBox(
+                                height: gap(AppDimensions.space16,
+                                    AppDimensions.space10)),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// "Davom etish orqali …" — the two documents it names stand out from
+/// the sentence, the way links do.
+class _TermsNote extends StatelessWidget {
+  const _TermsNote();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.palette;
+    final plain = AppTypography.caption.copyWith(color: c.textTertiary);
+    // Every span carries its full style: on web a span that only inherits
+    // a weight from `Text.rich(style:)` renders regular.
+    final strong = plain.copyWith(
+      color: c.textSecondary,
+      fontWeight: FontWeight.w600,
+    );
+    return Text.rich(
+      TextSpan(children: [
+        TextSpan(text: 'Davom etish orqali ', style: plain),
+        TextSpan(text: 'foydalanish shartlari', style: strong),
+        TextSpan(text: ' va\n', style: plain),
+        TextSpan(text: 'maxfiylik siyosati', style: strong),
+        TextSpan(text: 'ga rozilik bildirasiz.', style: plain),
+      ]),
+      style: plain,
+      textAlign: TextAlign.center,
     );
   }
 }
