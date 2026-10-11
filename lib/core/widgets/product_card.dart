@@ -169,14 +169,38 @@ class _CardPhoto extends StatefulWidget {
   State<_CardPhoto> createState() => _CardPhotoState();
 }
 
+/// One clock for every card's photo rotation. Each card used to run its
+/// own timer at its own offset, so with N cards on screen a cross-fade —
+/// and a full redraw — started N times per cycle. On one shared beat the
+/// cards turn together and the screen redraws once per beat.
+class _PhotoBeat {
+  static const every = Duration(milliseconds: 4500);
+  static final _listeners = <VoidCallback>{};
+  static Timer? _timer;
+
+  static void add(VoidCallback listener) {
+    _listeners.add(listener);
+    _timer ??= Timer.periodic(every, (_) {
+      for (final listener in List.of(_listeners)) {
+        listener();
+      }
+    });
+  }
+
+  static void remove(VoidCallback listener) {
+    _listeners.remove(listener);
+    if (_listeners.isEmpty) {
+      _timer?.cancel();
+      _timer = null;
+    }
+  }
+}
+
 class _CardPhotoState extends State<_CardPhoto> {
   int _index = 0;
-  Timer? _start;
-  Timer? _timer;
   bool _loading = false;
+  bool _listening = false;
   int _generation = 0;
-
-  static const _every = Duration(milliseconds: 3600);
 
   @override
   void initState() {
@@ -197,22 +221,18 @@ class _CardPhotoState extends State<_CardPhoto> {
 
   @override
   void dispose() {
-    _start?.cancel();
-    _timer?.cancel();
+    _PhotoBeat.remove(_next);
     super.dispose();
   }
 
   void _schedule() {
-    _start?.cancel();
-    _timer?.cancel();
-    if (widget.images.length < 2) return;
-    // Stable per-product offset (0–3.6 s) staggers the cards.
-    final offset =
-        widget.productId.codeUnits.fold<int>(0, (a, b) => a * 31 + b) %
-            _every.inMilliseconds;
-    _start = Timer(Duration(milliseconds: offset), () {
-      _timer = Timer.periodic(_every, (_) => _next());
-    });
+    final rotate = widget.images.length > 1;
+    if (rotate && !_listening) {
+      _PhotoBeat.add(_next);
+    } else if (!rotate && _listening) {
+      _PhotoBeat.remove(_next);
+    }
+    _listening = rotate;
   }
 
   Future<void> _next() async {

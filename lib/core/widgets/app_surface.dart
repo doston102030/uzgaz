@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../../app/theme/colors.dart';
@@ -92,6 +93,16 @@ class AppCard extends StatelessWidget {
   }
 }
 
+/// Whether glass surfaces blur what scrolls under them live.
+///
+/// A live backdrop blur re-blurs everything beneath it on every frame. In
+/// the browser — where Flutter redraws the whole scene each frame — the
+/// tab bar's and headers' blur alone held scrolling to ~20 frames a second
+/// on a mid-range phone and kept it hot. At the opacities these bars use
+/// the blur was barely visible anyway, so on the web they get a
+/// near-opaque fill instead. The native apps keep the frosted glass.
+const bool kLiveBlur = !kIsWeb;
+
 /// Translucent blurred bar — used for the tab bar, sticky headers and
 /// floating action bars so content scrolls *under* frosted glass.
 class GlassPanel extends StatelessWidget {
@@ -115,6 +126,16 @@ class GlassPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.palette;
+    if (!kLiveBlur) {
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          color: c.surface.withValues(alpha: c.isDark ? 0.97 : 0.95),
+          borderRadius: borderRadius,
+          border: border,
+        ),
+        child: Padding(padding: padding, child: child),
+      );
+    }
     return ClipRRect(
       borderRadius: borderRadius ?? BorderRadius.zero,
       child: BackdropFilter(

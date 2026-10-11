@@ -1789,3 +1789,20 @@ Natija: `web/index.html` Telegram ichida (yangi yoki shu sessiyadagi ishga tushi
 `web_app_expand`, `web_app_ready` yuborildi; tab bosilganda `web_app_trigger_haptic_feedback`; barmoq bilan surishda
 ro'yxat aylanadi. Testlar 99/99. Deploy qilindi (xesh mos, `.env.local` 404). Haqiqiy iPhone Telegram'da sinalmagan.
 Eslatma: Telegram 7.7 dan eski mijozlarda vertikal surishni o'chirib bo'lmaydi.
+
+### Claude (dizayn) — tezlik: telefon qizishi va qotish (2026-10-11)
+Doston: loyiha sekin, qotib qoladi, telefonni qizdiradi. O'lchov (headless Chrome, release build, protsessor 4× sekinlashtirilgan
+≈ o'rta telefon; har sahifa hech narsa bosilmay 8 s): **Bosh sahifa 45 kadr/s, protsessor 99.6% band** — hech kim tegmasa ham.
+Sabablar va tuzatishlar (`lib/core/widgets/**`):
+- `promo_carousel.dart`: `PromoCard` art'i cheksiz "nafas olardi" (2.6 s loop) → butun sahifa har kadrda qayta chizilardi. Endi tinch;
+  bannerning o'zi 6 s da sirpanib almashadi.
+- `product_card.dart`: har karta rasmni o'z taymerida, o'z vaqtida almashtirardi → endi bitta umumiy soat (4.5 s), bir martada.
+- `order_status_widget.dart` `LivePulse`, `pulsing_marker.dart` `PulsingMarker`: cheksiz pulslar → 3 marta pulslab to'xtaydi
+  (faol buyurtma / kuzatuv sahifasida doimiy qayta chizish edi). Map sahifasi ham `PulsingMarker` ishlatadi — Codex, xatti-harakati shu.
+- `app_surface.dart` (`kLiveBlur`), `bottom_navigation.dart`: brauzerda tab bar va tepa panel blur'i o'rniga 92–97% to'q fon
+  (ilovada — Android/iOS — blur qoladi).
+- Logo `alanga_logo.webp` (143 KB, PNG 405 KB edi; farq ko'rinmaydi) — splash/kirish/index.html.
+Natija: Bosh sahifa bo'sh holatda **99.6% → ~9–14%** (2 kadr/s: rasm/banner almashinuvi), katalog ~8%, qolganlari 0%.
+Aylantirish 4× sekin protsessorda ~21 → ~22 kadr/s (Flutter web grafikasining o'z narxi; katta yutuq yo'q).
+Yangi `test/idle_cost_test.dart` (eski kodda yiqiladi). Analyze — No issues (testdagi eski `if` eslatmasi ham tuzatildi), testlar 101/101.
+Deploy qilindi va jonli saytda o'lchandi. Onboarding filmi o'ynayotganda og'ir (25 s, keyin to'xtaydi) — tegilmadi.

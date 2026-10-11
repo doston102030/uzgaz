@@ -15,7 +15,9 @@ import '../../../../app/theme/colors.dart';
 class LoginBrandHeader extends StatelessWidget {
   const LoginBrandHeader({super.key});
 
-  static const logoAsset = 'assets/images/alanga_logo.png';
+  /// WebP: the same picture as alanga_logo.png at a third of the bytes —
+  /// it is the first thing a phone downloads and paints (index.html too).
+  static const logoAsset = 'assets/images/alanga_logo.webp';
 
   /// Smallest useful header (below the status bar); below this the page
   /// scrolls instead.

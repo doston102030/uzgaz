@@ -291,6 +291,10 @@ class OrderStatusBadge extends StatelessWidget {
 }
 
 /// Pulsing dot shown next to "Yo'lda" to signal a live order.
+///
+/// It pulses a few times as it appears, then holds still: an endless
+/// pulse kept the whole screen redrawing every frame for as long as an
+/// order was open, which is what made phones run hot.
 class LivePulse extends StatefulWidget {
   const LivePulse({super.key, this.color, this.size = 8});
 
@@ -305,7 +309,16 @@ class _LivePulseState extends State<LivePulse> with SingleTickerProviderStateMix
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1400),
-  )..repeat();
+  );
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    if (!MediaQuery.disableAnimationsOf(context)) _controller.repeat(count: 3);
+  }
 
   @override
   void dispose() {
@@ -325,14 +338,15 @@ class _LivePulseState extends State<LivePulse> with SingleTickerProviderStateMix
           return Stack(
             alignment: Alignment.center,
             children: [
-              Opacity(
-                opacity: (1 - _controller.value).clamp(0.0, 1.0) * 0.5,
-                child: Container(
-                  width: widget.size + (widget.size * 1.6 * _controller.value),
-                  height: widget.size + (widget.size * 1.6 * _controller.value),
-                  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              if (_controller.isAnimating)
+                Opacity(
+                  opacity: (1 - _controller.value).clamp(0.0, 1.0) * 0.5,
+                  child: Container(
+                    width: widget.size + (widget.size * 1.6 * _controller.value),
+                    height: widget.size + (widget.size * 1.6 * _controller.value),
+                    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                  ),
                 ),
-              ),
               Container(
                 width: widget.size,
                 height: widget.size,

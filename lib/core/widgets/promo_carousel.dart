@@ -91,7 +91,8 @@ class _PromoCarouselState extends State<PromoCarousel> {
 
   void _goTo(int index) {
     if (!_controller.hasClients) return;
-    _controller.animateToPage(index, duration: AppMotion.slow, curve: AppMotion.standard);
+    _controller.animateToPage(index,
+        duration: AppMotion.slow, curve: AppMotion.standard);
   }
 
   @override
@@ -130,7 +131,8 @@ class _PromoCarouselState extends State<PromoCarousel> {
               _CarouselArrow(
                 icon: Icons.chevron_left_rounded,
                 label: 'Oldingi',
-                onTap: () => _goTo((_index - 1 + widget.slides.length) % widget.slides.length),
+                onTap: () => _goTo(
+                    (_index - 1 + widget.slides.length) % widget.slides.length),
               ),
               const SizedBox(width: AppDimensions.space10),
               for (int i = 0; i < widget.slides.length; i++)
@@ -200,47 +202,22 @@ class _CarouselArrow extends StatelessWidget {
 }
 
 /// Light promo card: headline and accent caption on the left, a footer
-/// glyph (the truck, with speed lines streaming behind it) bottom-left,
-/// and a cut-out product shot gently floating on the right over a soft
-/// halo.
-class PromoCard extends StatefulWidget {
+/// glyph (the truck, with speed lines behind it) bottom-left, and a
+/// cut-out product shot on the right over a soft halo.
+///
+/// It holds still. The art used to "breathe" on an endless loop, which
+/// redrew the whole home page 60 times a second while nobody touched it —
+/// the CPU never rested and phones ran hot. The carousel's own slide
+/// every few seconds is motion enough.
+class PromoCard extends StatelessWidget {
   const PromoCard({super.key, required this.slide});
 
   final PromoSlide slide;
 
   @override
-  State<PromoCard> createState() => _PromoCardState();
-}
-
-class _PromoCardState extends State<PromoCard>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _loop = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2600),
-  );
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (MediaQuery.disableAnimationsOf(context)) {
-      _loop
-        ..stop()
-        ..value = 0.25;
-    } else if (!_loop.isAnimating) {
-      _loop.repeat();
-    }
-  }
-
-  @override
-  void dispose() {
-    _loop.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final c = context.palette;
-    final s = widget.slide;
+    final s = slide;
     final accent = s.accent;
     const radius = BorderRadius.all(Radius.circular(24));
 
@@ -291,126 +268,110 @@ class _PromoCardState extends State<PromoCard>
                 constraints.maxWidth - AppDimensions.space20 - artWidth - 16,
               );
               final compact = textWidth < 170;
-              return AnimatedBuilder(
-                animation: _loop,
-                builder: (context, _) {
-                  final t = _loop.value;
-                  // One slow breath per loop: the art lifts 3 px and its
-                  // shadow tightens as it does.
-                  final lift = math.sin(t * 2 * math.pi);
-                  return Stack(
-                    children: [
-                      Positioned.fill(
-                        child: CustomPaint(
-                          painter: _PromoHaloPainter(
+              return Stack(
+                children: [
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: _PromoHaloPainter(
+                        accent: accent,
+                        dark: c.isDark,
+                        center: Offset(
+                          constraints.maxWidth - artWidth / 2 - 8,
+                          height * 0.52,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 12,
+                    top: 10,
+                    bottom: 8,
+                    width: artWidth,
+                    child: s.image != null
+                        ? _CutoutArt(
+                            image: s.image!,
+                            icon: s.icon,
                             accent: accent,
-                            dark: c.isDark,
-                            center: Offset(
-                              constraints.maxWidth - artWidth / 2 - 8,
-                              height * 0.52,
+                          )
+                        : _BadgeArt(icon: s.icon, accent: accent),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      AppDimensions.space20,
+                      AppDimensions.space20,
+                      artWidth + 16,
+                      AppDimensions.space16,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Shrinks as a block, never overflows: narrow
+                        // phones wrap both lines, large system text
+                        // scales the pair down to fit above the footer.
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.topLeft,
+                            child: SizedBox(
+                              width: textWidth,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    s.title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTypography.title3.copyWith(
+                                      color: ink,
+                                      fontSize: compact ? 17 : 19,
+                                      fontWeight: FontWeight.w800,
+                                      height: 1.15,
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                    height: AppDimensions.space6,
+                                  ),
+                                  Text(
+                                    s.caption,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTypography.subhead.copyWith(
+                                      color: caption,
+                                      fontSize: compact ? 12.5 : 13.5,
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.25,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      Positioned(
-                        right: 12,
-                        top: 10,
-                        bottom: 8,
-                        width: artWidth,
-                        child: Transform.translate(
-                          offset: Offset(0, -3 * lift),
-                          child: s.image != null
-                              ? _CutoutArt(
-                                  image: s.image!,
-                                  icon: s.icon,
-                                  accent: accent,
-                                  lift: lift,
-                                )
-                              : _BadgeArt(icon: s.icon, accent: accent),
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          AppDimensions.space20,
-                          AppDimensions.space20,
-                          artWidth + 16,
-                          AppDimensions.space16,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Shrinks as a block, never overflows: narrow
-                            // phones wrap both lines, large system text
-                            // scales the pair down to fit above the footer.
-                            Flexible(
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.topLeft,
-                                child: SizedBox(
-                                  width: textWidth,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        s.title,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: AppTypography.title3.copyWith(
-                                          color: ink,
-                                          fontSize: compact ? 17 : 19,
-                                          fontWeight: FontWeight.w800,
-                                          height: 1.15,
-                                          letterSpacing: -0.2,
-                                        ),
-                                      ),
-                                      const SizedBox(
-                                        height: AppDimensions.space6,
-                                      ),
-                                      Text(
-                                        s.caption,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style:
-                                            AppTypography.subhead.copyWith(
-                                          color: caption,
-                                          fontSize: compact ? 12.5 : 13.5,
-                                          fontWeight: FontWeight.w600,
-                                          height: 1.25,
-                                        ),
-                                      ),
-                                    ],
+                            if (s.motionLines) ...[
+                              SizedBox(
+                                width: 22,
+                                height: 18,
+                                child: CustomPaint(
+                                  painter: _SpeedLinesPainter(
+                                    color: caption,
                                   ),
                                 ),
                               ),
-                            ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (s.motionLines) ...[
-                                  SizedBox(
-                                    width: 22,
-                                    height: 18,
-                                    child: CustomPaint(
-                                      painter: _SpeedLinesPainter(
-                                        t: t,
-                                        color: caption,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                ],
-                                Icon(s.footIcon, size: 30, color: ink),
-                              ],
-                            ),
+                              const SizedBox(width: 4),
+                            ],
+                            Icon(s.footIcon, size: 30, color: ink),
                           ],
                         ),
-                      ),
-                    ],
-                  );
-                },
+                      ],
+                    ),
+                  ),
+                ],
               );
             },
           ),
@@ -420,20 +381,17 @@ class _PromoCardState extends State<PromoCard>
   }
 }
 
-/// Cut-out product shot with a soft contact shadow that tightens as the
-/// shot floats up ([lift] -1…1).
+/// Cut-out product shot standing on a soft contact shadow.
 class _CutoutArt extends StatelessWidget {
   const _CutoutArt({
     required this.image,
     required this.icon,
     required this.accent,
-    required this.lift,
   });
 
   final String image;
   final IconData icon;
   final Color accent;
-  final double lift;
 
   @override
   Widget build(BuildContext context) {
@@ -442,15 +400,15 @@ class _CutoutArt extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         Positioned(
-          bottom: -3 - 3 * lift,
+          bottom: -3,
           child: Container(
-            width: 58 - 6 * lift,
+            width: 58,
             height: 10,
             decoration: BoxDecoration(
               borderRadius: const BorderRadius.all(Radius.elliptical(29, 5)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.22 - 0.05 * lift),
+                  color: Colors.black.withValues(alpha: 0.22),
                   blurRadius: 10,
                 ),
               ],
@@ -559,8 +517,7 @@ class _PromoHaloPainter extends CustomPainter {
       ..drawCircle(
         Offset(size.width * 0.52, -size.height * 0.12),
         size.height * 0.30,
-        Paint()
-          ..color = (dark ? Colors.white : accent).withValues(alpha: 0.05),
+        Paint()..color = (dark ? Colors.white : accent).withValues(alpha: 0.05),
       );
   }
 
@@ -571,26 +528,23 @@ class _PromoHaloPainter extends CustomPainter {
 
 /// Three dashes streaming right-to-left behind the truck, so it reads as
 /// moving. [t] is the 0–1 loop phase.
+/// Three still dashes trailing the truck: speed, without motion.
 class _SpeedLinesPainter extends CustomPainter {
-  _SpeedLinesPainter({required this.t, required this.color});
+  _SpeedLinesPainter({required this.color});
 
-  final double t;
   final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
     const lengths = [12.0, 16.0, 9.0];
+    const alphas = [0.55, 0.85, 0.4];
     for (var i = 0; i < lengths.length; i++) {
       final y = size.height * (0.25 + 0.25 * i);
-      // Each dash crosses the full width twice per loop, offset in phase.
-      final phase = (t * 2 + i * 0.37) % 1;
-      final x = size.width * (1 - phase) - lengths[i] * 0.5;
-      final fade = math.sin(phase * math.pi);
       canvas.drawLine(
-        Offset(math.max(0, x), y),
-        Offset(math.min(size.width, x + lengths[i]), y),
+        Offset(size.width - lengths[i], y),
+        Offset(size.width, y),
         Paint()
-          ..color = color.withValues(alpha: 0.85 * fade)
+          ..color = color.withValues(alpha: alphas[i])
           ..strokeWidth = 2.2
           ..strokeCap = StrokeCap.round,
       );
@@ -598,8 +552,7 @@ class _SpeedLinesPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_SpeedLinesPainter old) =>
-      old.t != t || old.color != color;
+  bool shouldRepaint(_SpeedLinesPainter old) => old.color != color;
 }
 
 double _contrast(Color a, Color b) {

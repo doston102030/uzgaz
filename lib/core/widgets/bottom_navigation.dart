@@ -9,6 +9,7 @@ import '../../app/theme/dimensions.dart';
 import '../../app/theme/motion.dart';
 import '../../app/theme/typography.dart';
 import '../utils/haptics.dart';
+import 'app_surface.dart';
 
 class AppTabItem {
   const AppTabItem(this.icon, this.activeIcon, this.label, {this.accent});
@@ -266,14 +267,18 @@ class _AppTabBarState extends State<AppTabBar>
     final skin = layout.skin(Size(width, _Dock.height), cx, lean);
 
     final surface = c.surface;
+    // Without the live blur (web, see [kLiveBlur]) the fill closes up so
+    // what scrolls beneath stays a soft hint rather than sharp text.
+    const lift = kLiveBlur ? 0.0 : 0.08;
     final glass = c.isDark
         ? [
-            Color.lerp(surface, Colors.white, 0.05)!.withValues(alpha: 0.86),
-            surface.withValues(alpha: 0.80),
+            Color.lerp(surface, Colors.white, 0.05)!
+                .withValues(alpha: 0.86 + lift),
+            surface.withValues(alpha: 0.80 + lift),
           ]
         : [
-            surface.withValues(alpha: 0.90),
-            surface.withValues(alpha: 0.84),
+            surface.withValues(alpha: 0.90 + lift),
+            surface.withValues(alpha: 0.84 + lift),
           ];
     final labelColor = _legibleOn(accent, surface);
     final labelStyle = AppTypography.caption2.copyWith(
@@ -302,18 +307,7 @@ class _AppTabBarState extends State<AppTabBar>
           child: IgnorePointer(
             child: ClipPath(
               clipper: _PathClipper(skin),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: glass,
-                    ),
-                  ),
-                ),
-              ),
+              child: _GlassFill(colors: glass),
             ),
           ),
         ),
@@ -959,4 +953,30 @@ class AdminBottomNavigation extends StatelessWidget {
         onTap: onTap,
         badges: badges,
       );
+}
+
+/// The dock's glass: frosted where the live blur is affordable, a plain
+/// fill on the web (see [kLiveBlur]).
+class _GlassFill extends StatelessWidget {
+  const _GlassFill({required this.colors});
+
+  final List<Color> colors;
+
+  @override
+  Widget build(BuildContext context) {
+    final fill = DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: colors,
+        ),
+      ),
+    );
+    if (!kLiveBlur) return fill;
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+      child: fill,
+    );
+  }
 }

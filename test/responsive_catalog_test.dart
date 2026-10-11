@@ -126,8 +126,9 @@ void main() {
           await host(tester, entry.value,
               width: size.width, height: size.height, scale: scale);
           expect(tester.takeException(), isNull);
-          if (scale == 1)
+          if (scale == 1) {
             await capture(tester, '${entry.key}-${size.width.toInt()}');
+          }
           final scroll = find.byType(CustomScrollView).first;
           await tester.drag(scroll, const Offset(0, -550));
           await tester.pump(const Duration(milliseconds: 300));

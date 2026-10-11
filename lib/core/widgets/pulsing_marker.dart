@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 /// Wraps [child] with an expanding radar ring — the visual cue that a
 /// marker is "live" (the user's own position, a driver en route) rather
 /// than a static pin.
+///
+/// The ring runs a few times when the marker appears, then rests: an
+/// endless ring redrew the screen every frame for as long as it was open.
 class PulsingMarker extends StatefulWidget {
   const PulsingMarker({
     super.key,
@@ -24,7 +27,16 @@ class _PulsingMarkerState extends State<PulsingMarker>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 2000),
-  )..repeat();
+  );
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    if (!MediaQuery.disableAnimationsOf(context)) _controller.repeat(count: 3);
+  }
 
   @override
   void dispose() {
@@ -39,14 +51,15 @@ class _PulsingMarkerState extends State<PulsingMarker>
       builder: (context, _) => Stack(
         alignment: Alignment.center,
         children: [
-          Container(
-            width: widget.ringSize * _controller.value,
-            height: widget.ringSize * _controller.value,
-            decoration: BoxDecoration(
-              color: widget.color.withValues(alpha: 0.22 * (1 - _controller.value)),
-              shape: BoxShape.circle,
+          if (_controller.isAnimating)
+            Container(
+              width: widget.ringSize * _controller.value,
+              height: widget.ringSize * _controller.value,
+              decoration: BoxDecoration(
+                color: widget.color.withValues(alpha: 0.22 * (1 - _controller.value)),
+                shape: BoxShape.circle,
+              ),
             ),
-          ),
           widget.child,
         ],
       ),
