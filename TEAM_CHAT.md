@@ -1737,3 +1737,55 @@ Doston ruxsati bilan: yuqoridagi onboarding/kirish/vibratsiya o'zgarishlari bila
 Natija: https://gaz-energiya-app.vercel.app yangilandi — `main.dart.js` xeshi lokal build bilan bir xil.
 Jonli saytda headless Chrome: Android rejimida 4 bosish → 4 × `vibrate(20)`, iPhone rejimida 4 × switch-tick,
 sahifa xatosi 0. `vercel link` yaratgan `.env.local` (OIDC token) yuklashdan oldin o'chirildi — saytda 404.
+
+### Claude (dizayn) — splash ekrani Alanga brendida (2026-10-11)
+Doston (telefon skrinshoti): ochilishdagi ko'k "Gaz & Energiya" splash'i (eski umumiy olov belgisi) nega chiqyapti.
+Qilaman: `splash_page.dart` — krem fon + Alanga logosi (kirish sarlavhasi bilan bir xil), 1.9 s qat'iy kutish o'rniga
+onboarding rasmlari yuklanguncha (1.1–4 s). `web/index.html` — Flutter yuklanguncha oq sahifa o'rniga aynan shu
+ekran (HTML/CSS), `web/manifest.json` fon rangi. `web/` hech kimning hududida emas — Doston so'ragani uchun tegaman.
+Router'ga tegmayman.
+Natija: splash endi Alanga logosi krem fonda (kirish sarlavhasi tili), shior va brend rangidagi nuqtalar; onboarding
+rasmlarini oldindan yuklaydi, 1.1 s dan oldin ketmaydi, 4 s dan ortiq ushlanmaydi. `web/index.html`: Flutter
+yuklanguncha aynan shu ekran (desktop'da ResponsiveFrame'dagi 480 px ramka bilan), Flutter'ning birinchi kadrida
+so'nadi; `viewport` meta qo'shildi (busiz telefon yuklanish ekranini 980 px kenglikda chizardi). Headless Chrome:
+390×844 va 1280×800 da HTML → Flutter splash logo farqi ~1/255 (sakrash yo'q), 2.3 s da onboarding, xato 0.
+`flutter analyze` toza, testlar 92/92 (yangi splash testi). Hali commit/deploy qilinmadi.
+
+### Claude (dizayn) — Telegram Mini App: "GoException: no routes for location: tgWebAppData=…" (2026-10-11)
+Doston: Telegram ichida ochilganda xato. Sabab: Telegram ishga tushirish ma'lumotini URL fragmentiga
+(`#tgWebAppData=…&tgWebAppVersion=…`) qo'shadi, hash routing esa uni sahifa yo'li deb o'qiydi.
+Qilaman: `web/index.html` — Flutter'dan oldin parametrlarni fragmentdan ajratib `sessionStorage` ga saqlash
+(Telegram SDK kaliti `__telegram__initParams`); yangi `lib/core/telegram/**` — `TelegramLaunch` (ma'lumotni o'qish +
+router uchun tozalash). **`lib/app/router/app_router.dart` ga tegaman (umumiy fayl):** faqat `initialLocation`
+(Telegram ichida `/home`) va yuqori darajadagi `redirect` qo'shiladi, marshrutlar o'zgarmaydi. Codex, xaritaga tegmayman.
+Natija (Telegram): `web/index.html` dagi skript Flutter'dan oldin `tgWebApp*` parametrlarini fragmentdan (va
+`?tgWebAppStartParam` dan) ajratib `sessionStorage['__telegram__initParams']` ga saqlaydi, Flutter'ga faqat yo'l qoladi.
+`lib/core/telegram/telegram_launch.dart` — `TelegramLaunch.current` (initData, platform, version, theme, startParam);
+`app_router.dart`: Telegram ichida `initialLocation` = `/home`, yuqori darajadagi `redirect` qolgan parametrlarni
+tozalaydi (fragment `#/catalog?tgWebAppData=…` → `/catalog`). Yangi `test/telegram_launch_test.dart` (7 ta, shu jumladan
+haqiqiy `appRouter` bilan butun ilova; tuzatishsiz yiqilishi tekshirildi). Testlar 99/99, analyze toza.
+Headless Chrome (release build): eski saytda xato qayta hosil qilindi ("Page Not Found — GoException…"); yangi build'da
+brauzer → splash → onboarding; Telegram fragmenti → `#/home`; `#/catalog?…` → katalog; startapp parametri saqlandi;
+qayta yuklash va `/` ga qaytish Telegram sessiyasida `/home`; Telegram'ning rasmiy `telegram-web-app.js` fragment
+tozalangandan keyin ham `initData`/user/platform'ni to'g'ri o'qidi. Haqiqiy Telegram ilovasida sinalmagan (deploy kerak).
+Doston Telegram Desktop'dan (@Alanga_uz_bot) xato skrinshotini yubordi — bu hali eski deploy. Telegram Desktop formati
+(`signature`, emoji'li ism, `tdesktop`, v9.1) yangi build'da sinaldi: `#/home`, ma'lumot aynan saqlandi. Yangi build
+(splash + Telegram tuzatishi) `gaz-energiya-app` ga production deploy qilinmoqda.
+Deploy tasdiqlandi: https://gaz-energiya-app.vercel.app — `main.dart.js` xeshi build bilan bir xil; jonli saytda
+Telegram Desktop formati → `#/home`; oddiy brauzer → onboarding; `#/catalog?tgWebAppData…` → katalog; Telegram SDK
+initData'ni o'qiydi; `.env.local`/`.vercel` 404. Service worker o'zini o'chiradigan turda — Telegram eski versiyani keshlamaydi.
+Commit hali qilinmadi (Doston javobini kutyapman).
+
+### Claude (dizayn) — Telegram iPhone: surganda butun oyna pastga tushadi (2026-10-11)
+Doston (iPhone skrinshoti): mini ilovada scroll qilsa, ilova emas — Telegram oynasi pastga tushib ketadi.
+Sabab: Telegram'ning "pastga surib yopish" ishorasi; Flutter sahifani o'zi aylantiradi, hujjat doim tepada turadi.
+Qilaman: `web/index.html` — faqat Telegram ichida rasmiy `telegram-web-app.js` ni yuklab `ready()`, `expand()`,
+`disableVerticalSwipes()`, sarlavha/fon rangini ilovaga moslash; `lib/core/utils/haptics.dart` + `web_buzz_web.dart` —
+Telegram ichida `Telegram.WebApp.HapticFeedback`. Router'ga tegmayman.
+Natija: `web/index.html` Telegram ichida (yangi yoki shu sessiyadagi ishga tushirish) rasmiy SDK'ni yuklab `ready`,
+`expand`, `disableVerticalSwipes` (7.7+), fon/sarlavha/pastki panel `#F6F8FC` chaqiradi; oddiy brauzerda SDK yuklanmaydi.
+`web_buzz_web.dart`: Telegram ichida `HapticFeedback` (light/medium/selection/success). Sinov: Telegram iPhone ko'prigi
+(`TelegramWebviewProxy`) soxtalashtirilib jonli saytda — `web_app_setup_swipe_behavior {allow_vertical_swipe:false}`,
+`web_app_expand`, `web_app_ready` yuborildi; tab bosilganda `web_app_trigger_haptic_feedback`; barmoq bilan surishda
+ro'yxat aylanadi. Testlar 99/99. Deploy qilindi (xesh mos, `.env.local` 404). Haqiqiy iPhone Telegram'da sinalmagan.
+Eslatma: Telegram 7.7 dan eski mijozlarda vertikal surishni o'chirib bo'lmaydi.

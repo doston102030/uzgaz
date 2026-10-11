@@ -18,6 +18,9 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <!-- The tag Flutter installs itself once it starts (it replaces this
+       one). Without it a phone lays the loading screen out 980 px wide. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="description" content="Energiya — bir necha tegishda">
   <meta name="theme-color" content="#2563EB">
 
@@ -32,8 +35,163 @@
 
   <title>Gaz &amp; Energiya</title>
   <link rel="manifest" href="manifest.json">
+
+  <script>
+    // Telegram Mini App. Telegram opens this page with its launch data in
+    // the fragment — #tgWebAppData=…&tgWebAppVersion=…&tgWebAppPlatform=…
+    // (or #/path?tgWebAppData=…). The app routes on the fragment, so left
+    // there it reads as a page: "no routes for location: tgWebAppData=…".
+    // Before Flutter starts: keep the params in sessionStorage — the key and
+    // shape Telegram's telegram-web-app.js uses, so they survive reloads and
+    // in-app navigation (lib/core/telegram/telegram_launch.dart reads them) —
+    // and leave Flutter only the path. Parsing follows telegram-web-app.js.
+    (function () {
+      var KEY = '__telegram__initParams';
+      function decode(value) {
+        try { return decodeURIComponent(value.replace(/\+/g, '%20')); }
+        catch (e) { return value; }
+      }
+      function take(query, params, rest) {
+        query.split('&').forEach(function (pair) {
+          if (!pair) return;
+          var i = pair.indexOf('=');
+          var key = decode(i < 0 ? pair : pair.slice(0, i));
+          if (key.indexOf('tgWebApp') === 0) {
+            params[key] = i < 0 ? '' : decode(pair.slice(i + 1));
+          } else if (rest) {
+            rest.push(pair);
+          }
+        });
+      }
+
+      // Inside Telegram only (a plain browser never loads it): Telegram's
+      // own SDK, to tell the client how this app wants to be shown.
+      //  * disableVerticalSwipes — Flutter scrolls inside its canvas, so the
+      //    page itself always sits "at the top", and Telegram took every
+      //    downward drag as "pull the sheet down": the whole app slid away
+      //    instead of the list scrolling (seen on iPhone). Bot API 7.7+.
+      //  * expand — open at full height, not as a half sheet.
+      //  * header/background in the app's own light background, so
+      //    Telegram's bar reads as part of the app.
+      // The SDK finds the launch data in the sessionStorage entry above,
+      // even though the fragment is gone by the time it runs.
+      function loadTelegramSdk() {
+        var script = document.createElement('script');
+        script.src = 'https://telegram.org/js/telegram-web-app.js';
+        script.onload = function () {
+          var app = window.Telegram && window.Telegram.WebApp;
+          if (!app) return;
+          function call(fn) { try { fn(); } catch (e) {} }
+          call(function () { app.ready(); });
+          call(function () { app.expand(); });
+          call(function () {
+            if (app.isVersionAtLeast('7.7')) app.disableVerticalSwipes();
+          });
+          call(function () {
+            if (app.isVersionAtLeast('6.1')) app.setBackgroundColor('#F6F8FC');
+          });
+          call(function () {
+            if (app.isVersionAtLeast('6.9')) app.setHeaderColor('#F6F8FC');
+          });
+          call(function () {
+            if (app.isVersionAtLeast('7.10')) app.setBottomBarColor('#F6F8FC');
+          });
+        };
+        document.head.appendChild(script);
+      }
+
+      try {
+        var hash = location.hash.replace(/^#/, '');
+        var path = '', query = '', params = {}, rest = [];
+        var q = hash.indexOf('?');
+        if (q >= 0) { path = hash.slice(0, q); query = hash.slice(q + 1); }
+        else if (hash.indexOf('=') >= 0) { query = hash; }
+        else { path = hash; }
+        take(query, params, rest);
+        // A "startapp" link puts tgWebAppStartParam in the query instead.
+        take(location.search.replace(/^\?/, ''), params, null);
+        var fresh = Object.keys(params).length > 0;
+
+        var stored = {};
+        try { stored = JSON.parse(sessionStorage.getItem(KEY)) || {}; } catch (e) {}
+        for (var k in stored) if (!(k in params)) params[k] = stored[k];
+        // Opened by Telegram now, or earlier in this same session (a reload
+        // after the fragment was already cleaned).
+        if (!Object.keys(params).length) return;
+        window.gazTelegramLaunch = params;
+        loadTelegramSdk();
+        if (!fresh) return;
+
+        try { sessionStorage.setItem(KEY, JSON.stringify(params)); } catch (e) {}
+        var clean = path + (rest.length ? '?' + rest.join('&') : '');
+        if (clean !== hash) {
+          history.replaceState(history.state, '',
+            location.pathname + location.search + (clean ? '#' + clean : ''));
+        }
+      } catch (e) {
+        // Never block the app over this; the router has its own fallback.
+      }
+    })();
+  </script>
+
+  <!--
+    Loading screen, shown before Flutter starts. It is the same picture as
+    the app's first screen (lib/features/auth/presentation/pages/splash_page.dart):
+    brand cream, a soft light, the Alanga logo at min(56vw, 240px) in the
+    exact centre — and on a desktop-wide window the same 480 px phone frame
+    as ResponsiveFrame. So the hand-over is invisible: no white page, no
+    flash of another colour. Change one, change the other.
+  -->
+  <style>
+    html, body { margin: 0; height: 100%; background: #FCE8D5; }
+    #splash {
+      position: fixed; inset: 0; z-index: 10;
+      display: flex; align-items: center; justify-content: center;
+      background: #EEF2F8;
+      transition: opacity .3s ease;
+    }
+    #splash .screen {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      background:
+        radial-gradient(circle 62vmin at 50% 50%, rgba(255,255,255,.85), rgba(255,255,255,0)),
+        linear-gradient(#FFF7EE, #FCE8D5);
+    }
+    #splash img { width: min(56vw, 240px); height: auto; }
+    @media (min-width: 900px) {
+      #splash .screen {
+        width: 480px; height: calc(100% - 48px);
+        border-radius: 32px; overflow: hidden;
+        box-shadow: 0 16px 36px rgba(11,21,38,.10), 0 2px 8px rgba(11,21,38,.05);
+        background:
+          radial-gradient(circle 298px at 50% 50%, rgba(255,255,255,.85), rgba(255,255,255,0)),
+          linear-gradient(#FFF7EE, #FCE8D5);
+      }
+    }
+    @media (min-width: 900px) and (max-height: 599px) {
+      #splash .screen { height: 100%; border-radius: 0; }
+    }
+    #splash.gone { opacity: 0; pointer-events: none; }
+  </style>
 </head>
 <body>
+  <div id="splash" aria-hidden="true">
+    <div class="screen">
+      <img src="assets/assets/images/alanga_logo.png" alt="">
+    </div>
+  </div>
+  <script>
+    // Flutter's first frame is the identical SplashPage. Give its logo a
+    // moment to decode (the browser already has the file), then fade away.
+    window.addEventListener('flutter-first-frame', function () {
+      var el = document.getElementById('splash');
+      if (!el) return;
+      setTimeout(function () {
+        el.classList.add('gone');
+        setTimeout(function () { el.remove(); }, 350);
+      }, 250);
+    });
+  </script>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader

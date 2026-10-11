@@ -3,6 +3,10 @@ import 'dart:js_interop_unsafe';
 
 /// One short buzz from a web page.
 ///
+/// * **Inside Telegram** (the app runs as a Mini App; `web/index.html`
+///   loads Telegram's SDK there): Telegram's own haptic engine, which works
+///   on iPhone and Android alike — [telegramStyle] is `light`, `medium`,
+///   `heavy`, `selection` or `success`.
 /// * **Android browsers** have the Vibration API — `navigator.vibrate(ms)`.
 /// * **iPhone Safari** has no Vibration API at all, so Flutter's
 ///   `HapticFeedback` does nothing there. Since iOS 18, though, toggling an
@@ -14,8 +18,13 @@ import 'dart:js_interop_unsafe';
 ///
 /// Must run inside the tap's own event (Flutter web delivers `onTap`
 /// synchronously from the browser's pointer event, so it does).
-void webBuzz(int milliseconds, {required bool ios}) {
+void webBuzz(
+  int milliseconds, {
+  required bool ios,
+  required String telegramStyle,
+}) {
   try {
+    if (_telegramBuzz(telegramStyle)) return;
     final navigator = globalContext.getProperty<JSObject>('navigator'.toJS);
     if (navigator.has('vibrate')) {
       navigator.callMethod<JSAny?>('vibrate'.toJS, milliseconds.toJS);
@@ -25,6 +34,31 @@ void webBuzz(int milliseconds, {required bool ios}) {
   } catch (_) {
     // A haptic is a nicety — never let it break the tap that asked for it.
   }
+}
+
+/// True when Telegram took the buzz.
+bool _telegramBuzz(String style) {
+  if (!globalContext.has('Telegram')) return false;
+  final telegram = globalContext.getProperty<JSObject>('Telegram'.toJS);
+  if (!telegram.has('WebApp')) return false;
+  final app = telegram.getProperty<JSObject>('WebApp'.toJS);
+  // The SDK also loads fine outside Telegram, where it says "unknown".
+  final platform = app.getProperty<JSString?>('platform'.toJS)?.toDart;
+  if (platform == null || platform == 'unknown') return false;
+  final supported =
+      app.callMethod<JSBoolean?>('isVersionAtLeast'.toJS, '6.1'.toJS)?.toDart;
+  if (supported != true || !app.has('HapticFeedback')) return false;
+
+  final haptics = app.getProperty<JSObject>('HapticFeedback'.toJS);
+  switch (style) {
+    case 'selection':
+      haptics.callMethod<JSAny?>('selectionChanged'.toJS);
+    case 'success':
+      haptics.callMethod<JSAny?>('notificationOccurred'.toJS, style.toJS);
+    default:
+      haptics.callMethod<JSAny?>('impactOccurred'.toJS, style.toJS);
+  }
+  return true;
 }
 
 void _switchTick() {

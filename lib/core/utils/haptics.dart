@@ -13,6 +13,8 @@ import 'web_buzz.dart';
 ///   phone motors barely render; 20 ms is the lightest that is reliably
 ///   felt. iPhone Safari has no `navigator.vibrate` at all, so Flutter's
 ///   haptics are silent there — [webBuzz] adds the iOS 18 switch tick.
+///   Inside Telegram (Mini App) it hands the buzz to Telegram's own haptic
+///   engine instead, which works on iPhone too.
 /// * **Android app**: `selectionClick` maps to `CLOCK_TICK`, which many
 ///   devices ignore; `lightImpact` maps to `VIRTUAL_KEY`, which they don't.
 /// * **iOS app**: the native generators are crisp at every level, so the
@@ -22,12 +24,13 @@ class AppHaptics {
 
   static bool get _isIOS => defaultTargetPlatform == TargetPlatform.iOS;
 
-  static void _web(int milliseconds) => webBuzz(milliseconds, ios: _isIOS);
+  static void _web(int milliseconds, String telegramStyle) =>
+      webBuzz(milliseconds, ios: _isIOS, telegramStyle: telegramStyle);
 
   /// Any button, card, chip or icon press.
   static void tap() {
     if (kIsWeb) {
-      _web(20);
+      _web(20, 'light');
     } else {
       HapticFeedback.lightImpact();
     }
@@ -36,7 +39,7 @@ class AppHaptics {
   /// Picking between options: tabs, segments, switches, sheet choices.
   static void selection() {
     if (kIsWeb) {
-      _web(20);
+      _web(20, 'selection');
     } else if (_isIOS) {
       HapticFeedback.selectionClick();
     } else {
@@ -47,7 +50,7 @@ class AppHaptics {
   /// Long press, swipe-to-delete, a confirmation dialog opening.
   static void emphasis() {
     if (kIsWeb) {
-      _web(30);
+      _web(30, 'medium');
     } else {
       HapticFeedback.mediumImpact();
     }
@@ -56,7 +59,7 @@ class AppHaptics {
   /// A finished flow worth celebrating (order placed).
   static void success() {
     if (kIsWeb) {
-      _web(40);
+      _web(40, 'success');
     } else {
       HapticFeedback.heavyImpact();
     }

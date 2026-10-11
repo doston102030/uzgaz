@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../core/telegram/telegram_launch.dart';
 import '../../core/widgets/bottom_navigation.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../features/addresses/presentation/pages/address_page.dart';
@@ -74,7 +75,14 @@ CustomTransitionPage<T> _fadePage<T>(Widget child, GoRouterState state) {
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/splash',
+  // Opened from Telegram as a Mini App: straight into the store.
+  initialLocation: TelegramLaunch.current != null ? '/home' : '/splash',
+  // Telegram puts its launch data in the URL fragment
+  // (`#tgWebAppData=…`), which hash routing would read as a page —
+  // "no routes for location: tgWebAppData=…". web/index.html strips it
+  // before Flutter starts; this catches anything that still gets here.
+  redirect: (context, state) =>
+      TelegramLaunch.redirect(state.uri, home: '/home'),
   routes: [
     GoRoute(
       path: '/splash',

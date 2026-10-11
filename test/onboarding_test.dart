@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:gaz_energiya/app/theme/app_theme.dart';
 import 'package:gaz_energiya/features/auth/presentation/pages/onboarding_page.dart';
+import 'package:gaz_energiya/features/auth/presentation/pages/splash_page.dart';
+import 'package:gaz_energiya/features/auth/presentation/widgets/login_brand_header.dart';
 import 'package:gaz_energiya/features/auth/presentation/widgets/onboarding_film.dart';
 import 'package:gaz_energiya/features/auth/presentation/widgets/onboarding_film_art.dart';
 
@@ -166,6 +168,40 @@ void _expectLayout(
 }
 
 void main() {
+  testWidgets('Splash shows the Alanga logo, then opens the intro',
+      (tester) async {
+    final router = GoRouter(
+      initialLocation: '/splash',
+      routes: [
+        GoRoute(path: '/splash', builder: (_, __) => const SplashPage()),
+        GoRoute(
+          path: '/onboarding',
+          builder: (_, __) => const Scaffold(body: Text('intro')),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+    );
+    expect(
+      find.byWidgetPredicate((w) =>
+          w is Image &&
+          w.image == const AssetImage(LoginBrandHeader.logoAsset)),
+      findsOneWidget,
+    );
+
+    await tester.pump(const Duration(milliseconds: 1000));
+    expect(find.text('intro'), findsNothing,
+        reason: 'the brand gets a beat on screen');
+
+    // Even if the photos never finish loading, it moves on.
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+    expect(find.text('intro'), findsOneWidget);
+    expect(find.byType(SplashPage), findsNothing);
+  });
+
   test('The film keeps the creative’s exact 25-second edit', () {
     expect(FilmTimeline.durations, [2500, 4000, 5500, 4500, 4500, 4000]);
     expect(FilmTimeline.total, 25000);
