@@ -1868,3 +1868,18 @@ Tekshiruv: Flutter analyze toza; jami 123/123 test; yakuniy Roboto responsive/to
 Doston skrinshot asosida xarita kartasi va delivery sahifasini ixchamlashtirishni so'radi. Avvalgi hudud topshirish amal qiladi. Shu komponentlar va responsive tekshiruvlarda ishlayman; Yandex API talablari tekshiriladi. Serverlar qayta ishga tushirilmaydi.
 
 Codex tekshiruv: MapCompanyCard sloti 168 -> 152 px, logo/padding/qatorlar ixcham. Delivery kartalaridan takroriy tavsiflar va katta pickup kompaniya bloki olib tashlandi, tugma medium; bo'sh yoki ? manzil o'rniga aniqlashtirish matni. 60/60 Roboto responsive test o'tdi; flutter analyze lib test toza. Umumiy analyze faqat build/onboarding_before_creative.dart lokal backupida xatolar ko'rsatdi, u o'zgartirilmadi. Yandex JS API uchun developer kalit va mos litsenziya kerak, hozir provider almashtirilmadi.
+
+Codex yakun: e65a34c origin/feat/supabase-panels-and-ui ga push qilindi; Flutter production gaz-energiya-app.vercel.app yangilandi, jonli main.dart.js lokal build bilan mos. 60 responsive test va lib/test analyze toza. Yandex integratsiyasi API kalit/litsenziya bo'lmagani uchun bajarilmadi; mavjud xarita ishlaydi.
+
+### Codex — Yandex ulash kirishini tekshirish (2026-10-13)
+Doston Yandex ulashni o'zim bajarishimni so'radi. Kod/configda tayyor Yandex kalitini va brauzer imkoniyatini tekshirdim. Ulangan brauzerlar yo'q; iab ochish Browser is not available qaytardi. Kalit qiymatlari chatga chiqarilmaydi.
+
+### Codex — Yandex JS API integratsiyasi (2026-10-13)
+Doston API kalitini berib ulashni topshirdi. Flutter web xaritasiga Yandex JS API v3 ulayman, kompaniya markerlari/tuman/fokus/light-dark saqlanadi. Native xarita mavjud providerda qoladi. Kalit gitga yozilmaydi, build define orqali beriladi. Serverlar qayta ishga tushirilmaydi.
+
+### Claude — Codex to'xtagan Yandex ishini davom ettirish (2026-10-13)
+Doston: "Codex to'xtab qoldi, joyidan davom et". Codex hududidagi Yandex JS API ishini (map_page.dart, map/presentation/widgets/yandex_map*, web/yandex_map.html) yakunlayman. Topilgan xato: dart:html cross-frame oynani har safar yangi o'ramga o'raydi, `event.source != _frame.contentWindow` doim rost — iframe xabarlari tashlanib, 25 s dan keyin OSM'ga qaytardi. Tuzatish: iframe manziliga noyob id qo'shildi, xabarlar shu id bo'yicha ajratiladi. Serverlar qayta ishga tushirilmaydi, kalit gitga yozilmaydi.
+
+Claude natija (2026-10-13): Yandex iframe ko'prigi tuzatildi va tekshirildi. flutter analyze lib test toza; widget + responsive testlar 95/95. Headless Chrome (CDP) bilan soxta kalitli release build: iframe `yandex_map.html#yandex-map-0` yaratiladi, ready → configure → error xabarlari Dart'ga yetib boradi, 5.8 s da OSM zaxira xaritasi ochiladi (avval 25 s taymergacha kutardi). Haqiqiy kalit bilan marker/tema/kamera hali sinalmadi — kalit lokalda saqlanmagan, Dostondan kerak. Build: `flutter build web --release --dart-define=YANDEX_MAPS_API_KEY=<kalit>`; Yandex kabinetida kalitning HTTP Referer ro'yxatida gaz-energiya-app.vercel.app bo'lishi kerak. Commit/push/deploy qilinmadi.
+
+Claude (2026-10-13): Doston kalitni berdi. Kalit gitga emas, gitignore'dagi `.env` ga `YANDEX_MAPS_API_KEY` sifatida yozildi — `.env` har bir buildga asset bo'lib qo'shiladi, shuning uchun keyingi har qanday `flutter build web` Yandex'ni avtomatik oladi (`--dart-define` ham ishlaydi, u ustun). Jonli tekshiruv: Yandex `403 Invalid api key` qaytaryapti — kabinetda kalit "Не настроен", JS API 3.0 HTTP Referer cheklovisiz kalitni qabul qilmaydi. Doston kabinetda referer qo'shishi kerak. Shu vaqtgacha ilova 3 s ichida OSM'ga o'tadi. Flutter test 133/133, analyze toza. Commit + push + Vercel deploy qilinmoqda.

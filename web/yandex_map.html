@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yandex xaritasi</title>
+<style>html,body,#map{margin:0;width:100%;height:100%;overflow:hidden}body{background:#f2f2f7}.pin{transform:translate(-50%,-100%);border:2px solid white;border-radius:16px;padding:9px 12px;background:#fff;color:#1c1c1e;font:600 13px system-ui;box-shadow:0 2px 8px #0003;cursor:pointer;white-space:nowrap}.pin.selected{background:#2463eb;color:white}.pin.user{background:#2463eb;border-radius:50%;padding:6px}</style></head>
+<body><div id="map"></div><script>
+'use strict';
+let map, apiLoading, markers=[], lastCamera, generation=0;
+const frameId=decodeURIComponent(location.hash.slice(1));
+const send = data => parent.postMessage(JSON.stringify({...data,id:frameId}),location.origin);
+async function load(key) {
+  if (!apiLoading) apiLoading = new Promise((resolve,reject) => {
+    const script=document.createElement('script');
+    script.src='https://api-maps.yandex.ru/v3/?apikey='+encodeURIComponent(key)+'&lang=ru_RU';
+    script.onload=()=>window.ymaps3 ? ymaps3.ready.then(resolve,reject) : reject(new Error('API unavailable'));
+    script.onerror=()=>reject(new Error('API load failed'));
+    document.head.append(script);
+    setTimeout(()=>reject(new Error('API timeout')),20000);
+  });
+  await apiLoading;
+}
+async function configure(data) {
+  const token=++generation;
+  try {
+    await load(data.apiKey);
+    if(token!==generation) return;
+    const {YMap,YMapDefaultSchemeLayer,YMapDefaultFeaturesLayer,YMapMarker}=ymaps3;
+    if(!map) {
+      map=new YMap(document.getElementById('map'),{location:{center:data.center,zoom:data.zoom},theme:data.dark?'dark':'light',behaviors:['drag','scrollZoom','dblClick','pinchZoom']});
+      map.addChild(new YMapDefaultSchemeLayer());
+      map.addChild(new YMapDefaultFeaturesLayer());
+    }
+    map.update({theme:data.dark?'dark':'light'});
+    if(lastCamera!==data.cameraRevision){map.setLocation({center:data.center,zoom:data.zoom,duration:300});lastCamera=data.cameraRevision;}
+    markers.forEach(marker=>map.removeChild(marker));markers=[];
+    (data.companies||[]).forEach((company,index)=>{
+      if(!Number.isFinite(company.lng)||!Number.isFinite(company.lat)) return;
+      const element=document.createElement('button');
+      element.type='button';element.className='pin'+(index===data.selected?' selected':'');
+      element.textContent=company.name;element.onclick=()=>send({type:'select',index});
+      const marker=new YMapMarker({coordinates:[company.lng,company.lat]},element);
+      map.addChild(marker);markers.push(marker);
+    });
+    send({type:'loaded'});
+    if(data.user){const element=document.createElement('div');element.className='pin user';element.title='Sizning joylashuvingiz';const marker=new YMapMarker({coordinates:data.user},element);map.addChild(marker);markers.push(marker);}
+  }catch(error){send({type:'error'});}
+}
+window.addEventListener('message',event=>{
+  if(event.origin!==location.origin||event.source!==parent||typeof event.data!=='string')return;
+  try{const data=JSON.parse(event.data);if(data.type==='configure')configure(data);}catch(error){}
+});
+send({type:'ready'});
+</script></body></html>

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,17 +21,12 @@ import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/custom_dialog.dart';
 import '../../../../core/widgets/map_company_card.dart';
 import '../../../../core/widgets/pulsing_marker.dart';
+import '../widgets/yandex_map.dart';
 import '../../../checkout/presentation/providers/checkout_provider.dart';
 import '../../../companies/domain/entities/company.dart';
 import '../../../companies/presentation/providers/company_provider.dart';
 
-/// Map screen — a real OpenStreetMap map (via `flutter_map`), not a
-/// stylised illustration. Chosen over the native Google/Yandex Maps SDKs
-/// because it needs no API key and no native Android SDK plugin, which
-/// sidesteps the compileSdk conflict that blocked the earlier Yandex Maps
-/// attempt. Swapping in a paid tile provider (or the Yandex SDK, once that
-/// conflict is resolved) later only means changing [_MapPageState]'s
-/// `TileLayer`.
+/// Interactive marketplace map; Yandex on web, OpenStreetMap on native.
 class MapPage extends ConsumerStatefulWidget {
   const MapPage({super.key});
 
@@ -42,6 +39,31 @@ class _MapPageState extends ConsumerState<MapPage>
   final PageController _pageController = PageController(viewportFraction: 0.78);
   late final AnimatedMapController _mapController;
   int _selected = 0;
+  static const _yandexDefine = String.fromEnvironment('YANDEX_MAPS_API_KEY');
+
+  /// Browser key: `--dart-define` wins, else the bundled (gitignored) `.env`.
+  static String get _yandexKey => _yandexDefine.isNotEmpty
+      ? _yandexDefine
+      : dotenv.isInitialized
+          ? dotenv.env['YANDEX_MAPS_API_KEY'] ?? ''
+          : '';
+  bool _yandexFailed = false;
+  bool get _useYandex => kIsWeb && _yandexKey.isNotEmpty && !_yandexFailed;
+  LatLng? _camera;
+  double _zoom = 13;
+  int _cameraRevision = 0;
+
+  void _move({required LatLng dest, double? zoom}) {
+    if (_useYandex) {
+      setState(() {
+        _camera = dest;
+        _zoom = zoom ?? _zoom;
+        _cameraRevision++;
+      });
+    } else {
+      _mapController.animateTo(dest: dest, zoom: zoom);
+    }
+  }
 
   /// Which Andijon tuman the map is focused on.
   AndijonDistrict _district = AndijonDistrict.andijonShahri;
@@ -86,14 +108,14 @@ class _MapPageState extends ConsumerState<MapPage>
     final companies = ref.read(sortedCompaniesProvider);
     if (_selected >= companies.length) return;
     final company = companies[_selected];
-    _mapController.animateTo(
+    _move(
       dest: LatLng(company.latitude, company.longitude),
     );
   }
 
   void _focusDistrict(AndijonDistrict district) {
     setState(() => _district = district);
-    _mapController.animateTo(
+    _move(
       dest: LatLng(district.latitude, district.longitude),
       zoom: 13,
     );
@@ -136,7 +158,7 @@ class _MapPageState extends ConsumerState<MapPage>
       if (!mounted) return;
       setState(() =>
           _myLocation = (lat: position.latitude, lng: position.longitude));
-      _mapController.animateTo(
+      _move(
         dest: LatLng(position.latitude, position.longitude),
         zoom: 15,
       );
@@ -165,119 +187,163 @@ class _MapPageState extends ConsumerState<MapPage>
     return Scaffold(
       body: Stack(
         children: [
-          Positioned.fill(
-            child: FlutterMap(
-              mapController: _mapController.mapController,
-              options: MapOptions(
-                initialCenter: LatLng(_district.latitude, _district.longitude),
-                initialZoom: 13,
-                minZoom: 6,
-                maxZoom: 18,
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                ),
+          if (_useYandex)
+            Positioned.fill(
+              // Keep browser gestures clear of Flutter controls and attribution.
+              top: topPad + 116,
+              bottom: MapCompanyCard.slotHeightFor(context) +
+                  AppDimensions.bottomBarClearance +
+                  40 +
+                  bottomPad,
+              child: YandexMapView(
+                configuration: {
+                  'apiKey': _yandexKey,
+                  'center': [
+                    (_camera?.longitude ?? _district.longitude),
+                    (_camera?.latitude ?? _district.latitude)
+                  ],
+                  'zoom': _zoom,
+                  'cameraRevision': _cameraRevision,
+                  'dark': c.isDark,
+                  'selected': selectedIndex,
+                  'companies': [
+                    for (final company in companies)
+                      {
+                        'name': company.name,
+                        'lng': company.longitude,
+                        'lat': company.latitude
+                      }
+                  ],
+                  'user': _myLocation == null
+                      ? null
+                      : [_myLocation!.lng, _myLocation!.lat],
+                },
+                onSelect: _select,
+                onError: () {
+                  if (!mounted || _yandexFailed) return;
+                  setState(() => _yandexFailed = true);
+                  AppToast.show(
+                      context, 'Yandex yuklanmadi. Muqobil xarita ochildi.');
+                },
               ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.gazenergiya.gaz_energiya',
-                ),
-                if (companies.isNotEmpty && userLatLng != null)
-                  PolylineLayer(
-                    polylines: [
-                      Polyline(
-                        points: [
-                          userLatLng,
-                          LatLng(
-                            companies[selectedIndex].latitude,
-                            companies[selectedIndex].longitude,
-                          ),
-                        ],
-                        strokeWidth: 7,
-                        strokeCap: StrokeCap.round,
-                        color: c.primary.withValues(alpha: 0.18),
-                      ),
-                      Polyline(
-                        points: [
-                          userLatLng,
-                          LatLng(
-                            companies[selectedIndex].latitude,
-                            companies[selectedIndex].longitude,
-                          ),
-                        ],
-                        strokeWidth: 3.5,
-                        strokeCap: StrokeCap.round,
-                        color: c.primary,
-                      ),
-                    ],
+            )
+          else
+            Positioned.fill(
+              child: FlutterMap(
+                mapController: _mapController.mapController,
+                options: MapOptions(
+                  initialCenter:
+                      LatLng(_district.latitude, _district.longitude),
+                  initialZoom: 13,
+                  minZoom: 6,
+                  maxZoom: 18,
+                  interactionOptions: const InteractionOptions(
+                    flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                   ),
-                MarkerLayer(
-                  markers: [
-                    if (userLatLng != null)
-                      Marker(
-                        point: userLatLng,
-                        width: 40,
-                        height: 40,
-                        child: PulsingMarker(
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.gazenergiya.gaz_energiya',
+                  ),
+                  if (companies.isNotEmpty && userLatLng != null)
+                    PolylineLayer(
+                      polylines: [
+                        Polyline(
+                          points: [
+                            userLatLng,
+                            LatLng(
+                              companies[selectedIndex].latitude,
+                              companies[selectedIndex].longitude,
+                            ),
+                          ],
+                          strokeWidth: 7,
+                          strokeCap: StrokeCap.round,
+                          color: c.primary.withValues(alpha: 0.18),
+                        ),
+                        Polyline(
+                          points: [
+                            userLatLng,
+                            LatLng(
+                              companies[selectedIndex].latitude,
+                              companies[selectedIndex].longitude,
+                            ),
+                          ],
+                          strokeWidth: 3.5,
+                          strokeCap: StrokeCap.round,
                           color: c.primary,
-                          child: Container(
-                            width: 15,
-                            height: 15,
-                            decoration: BoxDecoration(
-                              color: c.primary,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 3),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: c.primary.withValues(alpha: 0.5),
-                                  blurRadius: 10,
-                                ),
-                              ],
+                        ),
+                      ],
+                    ),
+                  MarkerLayer(
+                    markers: [
+                      if (userLatLng != null)
+                        Marker(
+                          point: userLatLng,
+                          width: 40,
+                          height: 40,
+                          child: PulsingMarker(
+                            color: c.primary,
+                            child: Container(
+                              width: 15,
+                              height: 15,
+                              decoration: BoxDecoration(
+                                color: c.primary,
+                                shape: BoxShape.circle,
+                                border:
+                                    Border.all(color: Colors.white, width: 3),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: c.primary.withValues(alpha: 0.5),
+                                    blurRadius: 10,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    for (int i = 0; i < companies.length; i++)
-                      Marker(
-                        point: LatLng(
-                            companies[i].latitude, companies[i].longitude),
-                        width: 64,
-                        height: 84,
-                        alignment: Alignment.bottomCenter,
-                        child: _MapMarker(
-                          company: companies[i],
-                          selected: i == selectedIndex,
-                          onTap: () => _select(i),
+                      for (int i = 0; i < companies.length; i++)
+                        Marker(
+                          point: LatLng(
+                              companies[i].latitude, companies[i].longitude),
+                          width: 64,
+                          height: 84,
+                          alignment: Alignment.bottomCenter,
+                          child: _MapMarker(
+                            company: companies[i],
+                            selected: i == selectedIndex,
+                            onTap: () => _select(i),
+                          ),
+                        ),
+                    ],
+                  ),
+                  Scalebar(
+                    alignment: Alignment.bottomLeft,
+                    padding: EdgeInsets.only(
+                      left: AppDimensions.gutter,
+                      bottom: 336 + bottomPad,
+                    ),
+                    lineColor: c.textSecondary,
+                    textStyle: AppTypography.caption2.copyWith(
+                      color: c.textSecondary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  RichAttributionWidget(
+                    alignment: AttributionAlignment.bottomRight,
+                    attributions: [
+                      TextSourceAttribution(
+                        'OpenStreetMap contributors',
+                        onTap: () => launchUrl(
+                          Uri.parse('https://openstreetmap.org/copyright'),
                         ),
                       ),
-                  ],
-                ),
-                Scalebar(
-                  alignment: Alignment.bottomLeft,
-                  padding: EdgeInsets.only(
-                    left: AppDimensions.gutter,
-                    bottom: 336 + bottomPad,
+                    ],
                   ),
-                  lineColor: c.textSecondary,
-                  textStyle: AppTypography.caption2.copyWith(
-                    color: c.textSecondary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                RichAttributionWidget(
-                  alignment: AttributionAlignment.bottomRight,
-                  attributions: [
-                    TextSourceAttribution(
-                      'OpenStreetMap contributors',
-                      onTap: () => launchUrl(
-                        Uri.parse('https://openstreetmap.org/copyright'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
 
           // Top chrome: search + filter + district chips, floating on glass.
           Positioned(
