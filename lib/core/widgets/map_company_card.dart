@@ -36,7 +36,7 @@ class MapCompanyCard extends StatelessWidget {
 
   /// Includes the carousel's 12 px vertical space around the card.
   static double slotHeightFor(BuildContext context) =>
-      168 +
+      152 +
       (MediaQuery.textScalerOf(context).scale(14) - 14)
               .clamp(0, double.infinity) *
           7;
@@ -47,9 +47,9 @@ class MapCompanyCard extends StatelessWidget {
     return AppCard(
       onTap: onTap,
       selected: selected,
-      elevation: AppElevation.md,
+      elevation: AppElevation.sm,
       width: width,
-      padding: const EdgeInsets.all(AppDimensions.space12),
+      padding: const EdgeInsets.all(AppDimensions.space10),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -57,7 +57,7 @@ class MapCompanyCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              CompanyLogo(name: company.name, size: 36),
+              CompanyLogo(name: company.name, size: 32),
               const SizedBox(width: AppDimensions.space8),
               Expanded(
                 child: Column(
@@ -94,11 +94,11 @@ class MapCompanyCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppDimensions.space8),
+          const SizedBox(height: AppDimensions.space6),
           Container(
             padding: const EdgeInsets.symmetric(
               horizontal: AppDimensions.space8,
-              vertical: AppDimensions.space6,
+              vertical: 4,
             ),
             decoration: BoxDecoration(
               color: c.isDark ? c.surfaceMuted : c.background,
@@ -131,7 +131,7 @@ class MapCompanyCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: AppDimensions.space8),
+          const SizedBox(height: AppDimensions.space6),
           Row(
             children: [
               Expanded(

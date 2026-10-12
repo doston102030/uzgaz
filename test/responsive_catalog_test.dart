@@ -20,6 +20,7 @@ import 'package:gaz_energiya/features/companies/presentation/pages/company_list_
 import 'package:gaz_energiya/features/companies/presentation/providers/company_provider.dart';
 import 'package:gaz_energiya/features/home/presentation/pages/home_page.dart';
 import 'package:gaz_energiya/features/payment/presentation/pages/payment_page.dart';
+import 'package:gaz_energiya/features/checkout/presentation/pages/delivery_method_page.dart';
 import 'package:gaz_energiya/core/widgets/custom_dialog.dart';
 import 'package:gaz_energiya/features/checkout/presentation/providers/checkout_provider.dart';
 import 'package:gaz_energiya/features/cart/presentation/providers/cart_provider.dart';
@@ -132,6 +133,7 @@ void main() {
         'catalog': const CatalogPage(),
         'companies': const CompanyListPage(),
         'payment': const PaymentPage(),
+        'delivery': const DeliveryMethodPage(),
       }.entries) {
         testWidgets('${entry.key} fits ${size.width} at $scale text',
             (tester) async {
