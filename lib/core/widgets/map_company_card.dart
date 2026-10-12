@@ -34,6 +34,13 @@ class MapCompanyCard extends StatelessWidget {
   final bool selected;
   final double width;
 
+  /// Includes the carousel's 12 px vertical space around the card.
+  static double slotHeightFor(BuildContext context) =>
+      168 +
+      (MediaQuery.textScalerOf(context).scale(14) - 14)
+              .clamp(0, double.infinity) *
+          7;
+
   @override
   Widget build(BuildContext context) {
     final c = context.palette;
@@ -42,7 +49,7 @@ class MapCompanyCard extends StatelessWidget {
       selected: selected,
       elevation: AppElevation.md,
       width: width,
-      padding: const EdgeInsets.all(AppDimensions.space14),
+      padding: const EdgeInsets.all(AppDimensions.space12),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -50,8 +57,8 @@ class MapCompanyCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              CompanyLogo(name: company.name, size: 44),
-              const SizedBox(width: AppDimensions.space12),
+              CompanyLogo(name: company.name, size: 36),
+              const SizedBox(width: AppDimensions.space8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,31 +73,37 @@ class MapCompanyCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        RatingWidget(
-                          rating: company.rating,
-                          reviewCount: company.reviewCount,
-                          size: 12,
-                        ),
-                        const SizedBox(width: AppDimensions.space8),
-                        _OpenStatus(open: company.isAvailable),
-                      ],
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          RatingWidget(
+                            rating: company.rating,
+                            reviewCount: company.reviewCount,
+                            size: 12,
+                          ),
+                          const SizedBox(width: AppDimensions.space8),
+                          _OpenStatus(open: company.isAvailable),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: AppDimensions.space10),
+          const SizedBox(height: AppDimensions.space8),
           Container(
             padding: const EdgeInsets.symmetric(
               horizontal: AppDimensions.space8,
-              vertical: AppDimensions.space8,
+              vertical: AppDimensions.space6,
             ),
             decoration: BoxDecoration(
               color: c.isDark ? c.surfaceMuted : c.background,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusXSmall + 2),
+              borderRadius:
+                  BorderRadius.circular(AppDimensions.radiusXSmall + 2),
             ),
             // Evenly spread; the hours slot is wider because "08:00–22:00"
             // is the longest figure.
@@ -111,13 +124,14 @@ class MapCompanyCard extends StatelessWidget {
                 _MiniStat(
                   icon: Icons.access_time_rounded,
                   // "08:00 - 22:00" -> "08:00–22:00": same info, narrower.
-                  label: company.workingHours.replaceAll(RegExp(r'\s*-\s*'), '–'),
+                  label:
+                      company.workingHours.replaceAll(RegExp(r'\s*-\s*'), '–'),
                   flex: 3,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: AppDimensions.space10),
+          const SizedBox(height: AppDimensions.space8),
           Row(
             children: [
               Expanded(
@@ -145,11 +159,16 @@ class MapCompanyCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppDimensions.space8),
-              AppButton(
-                label: 'Tanlash',
-                size: AppButtonSize.small,
-                expand: false,
-                onPressed: company.isAvailable ? (onSelect ?? onTap) : null,
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: AppButton(
+                    label: 'Tanlash',
+                    size: AppButtonSize.small,
+                    expand: false,
+                    onPressed: company.isAvailable ? (onSelect ?? onTap) : null,
+                  ),
+                ),
               ),
             ],
           ),

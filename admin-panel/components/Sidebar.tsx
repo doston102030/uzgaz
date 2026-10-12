@@ -9,6 +9,7 @@ import {
   Users,
   ClipboardList,
   Tags,
+  Megaphone,
   ServerCog,
   Flame,
   X,
@@ -21,6 +22,7 @@ const NAV = [
   { href: "/sellers", label: "Sotuvchilar", icon: Users },
   { href: "/products", label: "Mahsulotlar", icon: PackageSearch },
   { href: "/categories", label: "Kategoriyalar", icon: Tags },
+  { href: "/banners", label: "Reklama", icon: Megaphone },
   { href: "/orders", label: "Buyurtmalar", icon: ClipboardList },
   { href: "/system", label: "Tizim", icon: ServerCog },
 ] as const;

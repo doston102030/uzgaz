@@ -19,6 +19,7 @@ import '../../../cart/presentation/providers/cart_provider.dart';
 import '../../../products/presentation/providers/product_provider.dart';
 import '../../domain/entities/order.dart';
 import '../providers/order_provider.dart';
+import '../../../../core/widgets/product_thumb.dart';
 
 enum OrderTab { barchasi, faol, yakunlangan }
 
@@ -247,7 +248,13 @@ class _OrderCard extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                EnergyAvatar(
+                ProductThumb(
+                  imageUrl: order.items.isEmpty
+                      ? null
+                      : ref
+                          .watch(productByIdProvider(order.items.first.productId))
+                          ?.gallery
+                          .firstOrNull,
                   visual: EnergyVisualX.fromCategory(
                     order.items.isEmpty ? '' : order.items.first.categoryId,
                     name: order.summary,

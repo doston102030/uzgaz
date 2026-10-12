@@ -44,7 +44,7 @@ class ProductCardSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.palette;
-    // Mirrors ProductCard: edge-to-edge photo, then name / seller / price.
+    // Mirrors ProductCard: the inset photo tile, then name / seller / price.
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
@@ -55,7 +55,16 @@ class ProductCardSkeleton extends StatelessWidget {
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          LoadingSkeleton(height: AppDimensions.productImageHeight, radius: 0),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppDimensions.productPhotoInset,
+              AppDimensions.productPhotoInset,
+              AppDimensions.productPhotoInset,
+              0,
+            ),
+            child: LoadingSkeleton(
+                height: AppDimensions.productImageHeight, radius: 14),
+          ),
           Expanded(
             child: Padding(
               padding: EdgeInsets.fromLTRB(

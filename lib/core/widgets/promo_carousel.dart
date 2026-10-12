@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../app/theme/colors.dart';
@@ -19,10 +20,12 @@ class PromoSlide {
     this.footIcon = Icons.local_shipping_outlined,
     this.motionLines = false,
     this.image,
+    this.imageUrl,
     this.icon = Icons.local_fire_department_rounded,
   });
 
-  final VoidCallback onTap;
+  /// Null: the banner goes nowhere and does not react to taps.
+  final VoidCallback? onTap;
   final String title;
   final String caption;
 
@@ -36,8 +39,11 @@ class PromoSlide {
   final bool motionLines;
 
   /// Cut-out product shot (transparent PNG asset) on the right. Without
-  /// one, [icon] is drawn as a glowing badge instead.
+  /// one (or [imageUrl]), [icon] is drawn as a glowing badge instead.
   final String? image;
+
+  /// The same, downloaded — a picture the admin uploaded for the banner.
+  final String? imageUrl;
   final IconData icon;
 }
 
@@ -54,6 +60,11 @@ class PromoCarousel extends StatefulWidget {
   });
 
   final List<PromoSlide> slides;
+
+  static const double cardHeight = 148;
+
+  /// The gap and the arrows-and-dots row under the card (several slides).
+  static const double controlsHeight = AppDimensions.space12 + 28;
 
   /// How long each slide stays before auto-advancing. Any manual swipe
   /// or arrow tap resets this timer, so it never fights the buyer.
@@ -75,6 +86,22 @@ class _PromoCarouselState extends State<PromoCarousel> {
   }
 
   @override
+  void didUpdateWidget(covariant PromoCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.slides.length != widget.slides.length) {
+      _index = 0;
+      // Admin edits can remove the current page while the home is open.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _controller.hasClients) _controller.jumpToPage(0);
+      });
+    }
+    if (oldWidget.slides.length != widget.slides.length ||
+        oldWidget.autoRotate != widget.autoRotate) {
+      _scheduleAutoRotate();
+    }
+  }
+
+  @override
   void dispose() {
     _timer?.cancel();
     _controller.dispose();
@@ -83,7 +110,7 @@ class _PromoCarouselState extends State<PromoCarousel> {
 
   void _scheduleAutoRotate() {
     _timer?.cancel();
-    if (widget.slides.length < 2) return;
+    if (widget.slides.length < 2 || widget.autoRotate <= Duration.zero) return;
     _timer = Timer.periodic(widget.autoRotate, (_) {
       _goTo((_index + 1) % widget.slides.length);
     });
@@ -103,7 +130,7 @@ class _PromoCarouselState extends State<PromoCarousel> {
     return Column(
       children: [
         SizedBox(
-          height: 148,
+          height: PromoCarousel.cardHeight,
           child: PageView.builder(
             controller: _controller,
             // The card's coloured glow reaches past its bounds; clipping
@@ -135,20 +162,30 @@ class _PromoCarouselState extends State<PromoCarousel> {
                     (_index - 1 + widget.slides.length) % widget.slides.length),
               ),
               const SizedBox(width: AppDimensions.space10),
-              for (int i = 0; i < widget.slides.length; i++)
-                AnimatedContainer(
-                  duration: AppMotion.base,
-                  curve: AppMotion.standard,
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: i == _index ? 18 : 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: i == _index
-                        ? context.palette.primary
-                        : context.palette.borderStrong,
-                    borderRadius: AppDimensions.brPill,
+              Flexible(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (int i = 0; i < widget.slides.length; i++)
+                        AnimatedContainer(
+                          duration: AppMotion.base,
+                          curve: AppMotion.standard,
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          width: i == _index ? 18 : 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: i == _index
+                                ? context.palette.primary
+                                : context.palette.borderStrong,
+                            borderRadius: AppDimensions.brPill,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
+              ),
               const SizedBox(width: AppDimensions.space10),
               _CarouselArrow(
                 icon: Icons.chevron_right_rounded,
@@ -158,6 +195,28 @@ class _PromoCarouselState extends State<PromoCarousel> {
             ],
           ),
         ],
+      ],
+    );
+  }
+}
+
+/// Holds the carousel's place while its banners load, so the page below
+/// does not jump when they arrive. Still — no shimmer loop.
+class PromoCarouselPlaceholder extends StatelessWidget {
+  const PromoCarouselPlaceholder({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          height: PromoCarousel.cardHeight,
+          decoration: BoxDecoration(
+            color: context.palette.surfaceMuted,
+            borderRadius: const BorderRadius.all(Radius.circular(24)),
+          ),
+        ),
+        const SizedBox(height: PromoCarousel.controlsHeight),
       ],
     );
   }
@@ -287,9 +346,10 @@ class PromoCard extends StatelessWidget {
                     top: 10,
                     bottom: 8,
                     width: artWidth,
-                    child: s.image != null
+                    child: s.image != null || s.imageUrl != null
                         ? _CutoutArt(
-                            image: s.image!,
+                            image: s.image,
+                            imageUrl: s.imageUrl,
                             icon: s.icon,
                             accent: accent,
                           )
@@ -384,12 +444,14 @@ class PromoCard extends StatelessWidget {
 /// Cut-out product shot standing on a soft contact shadow.
 class _CutoutArt extends StatelessWidget {
   const _CutoutArt({
-    required this.image,
+    this.image,
+    this.imageUrl,
     required this.icon,
     required this.accent,
   });
 
-  final String image;
+  final String? image;
+  final String? imageUrl;
   final IconData icon;
   final Color accent;
 
@@ -416,13 +478,25 @@ class _CutoutArt extends StatelessWidget {
           ),
         ),
         Positioned.fill(
-          child: Image.asset(
-            image,
-            fit: BoxFit.contain,
-            alignment: Alignment.bottomCenter,
-            filterQuality: FilterQuality.medium,
-            errorBuilder: (_, __, ___) => _BadgeArt(icon: icon, accent: accent),
-          ),
+          child: image != null
+              ? Image.asset(
+                  image!,
+                  fit: BoxFit.contain,
+                  alignment: Alignment.bottomCenter,
+                  filterQuality: FilterQuality.medium,
+                  errorBuilder: (_, __, ___) =>
+                      _BadgeArt(icon: icon, accent: accent),
+                )
+              : CachedNetworkImage(
+                  imageUrl: imageUrl!,
+                  fit: BoxFit.contain,
+                  alignment: Alignment.bottomCenter,
+                  filterQuality: FilterQuality.medium,
+                  fadeInDuration: AppMotion.fast,
+                  placeholder: (_, __) => const SizedBox.shrink(),
+                  errorWidget: (_, __, ___) =>
+                      _BadgeArt(icon: icon, accent: accent),
+                ),
         ),
       ],
     );

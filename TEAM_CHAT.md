@@ -1806,3 +1806,43 @@ Natija: Bosh sahifa bo'sh holatda **99.6% → ~9–14%** (2 kadr/s: rasm/banner 
 Aylantirish 4× sekin protsessorda ~21 → ~22 kadr/s (Flutter web grafikasining o'z narxi; katta yutuq yo'q).
 Yangi `test/idle_cost_test.dart` (eski kodda yiqiladi). Analyze — No issues (testdagi eski `if` eslatmasi ham tuzatildi), testlar 101/101.
 Deploy qilindi va jonli saytda o'lchandi. Onboarding filmi o'ynayotganda og'ir (25 s, keyin to'xtaydi) — tegilmadi.
+
+### Claude (dizayn) — kartalar, savat rasmi, xarita kartasi, reklama admin'dan (2026-10-11)
+Doston (5 ta skrinshot): mahsulot kartalari bir xil emas va telefonda uzun; savatda haqiqiy rasm o'rniga chizma;
+xaritadagi kompaniya kartasi katta; kategoriya kartalari bir xil emas; reklama bannerini admin paneldan qo'yish.
+Topildi: 360 px telefonda grid 1 ustunga tushadi (ustun = kenglik / 168), karta 316 px.
+Qilaman:
+- `lib/core/widgets/{product_card,responsive_product_grid,loading_skeleton,category_filter_bar,map_company_card,promo_carousel}.dart`,
+  `lib/app/theme/dimensions.dart` (faqat token), `lib/features/{cart,home,catalog}/**`.
+- **`lib/features/map/presentation/pages/map_page.dart` — faqat karusel balandligi (190) `MapCompanyCard.slotHeight` ga** (Codex hududi,
+  Doston bevosita so'radi; boshqa joyiga tegmayman).
+- Yangi `supabase/promo_banners_setup.sql` (+ `all_setup.sql`), admin-panel: "Reklama" bo'limi (`app/banners`, `lib/db.ts`,
+  Sidebar, Tizim, `api/setup-sql`). SQL'ni Doston ishga tushiradi; shungacha ilova hozirgi bannerlarni ko'rsatadi.
+
+### Codex — admin parolini o'qish (2026-10-11)
+Vazifa: Doston ko'rsatgan vaqtinchalik admin-password.txt faylidan parolni o'qib berish.
+Natija: fayl o'qildi; parol foydalanuvchiga chatda berildi. Parol bu jurnalga yozilmadi, loyiha kodi o'zgarmadi.
+
+### Codex — admin loginini aniqlash (2026-10-11)
+Doston so'rovi: deploy fayllari va admin kirish sozlamalaridan loginni o'qib tekshiraman. Kod o'zgartirilmaydi.
+
+### Codex — Claude to'xtagan ishni davom ettirish (2026-10-11)
+Dostonning bevosita topshirig'i bilan Claude'ning oxirgi vazifasini qabul qildim: mahsulot/kategoriya kartalari, savat rasmi, xarita kartasi va admin reklama bannerlari. Mavjud o'zgarishlar saqlanadi; lib/core, tegishli feature'lar, admin-panel va supabase bo'yicha tugallanmagan qismlar tekshirilib yakunlanadi. Serverlar qayta ishga tushirilmaydi. Routerga o'zgartirish hozircha rejalashtirilmagan. Ish bo'linishi va natijalar quyida qayd etiladi.
+Ish taqsimoti: Codex/product_cards — mahsulot grid/kartasi, ProductThumb, savat/checkout/orders/tracking va tegishli testlar; Codex/admin_banners — admin-panel va banner SQL; Codex/map_categories — category_filter_bar, map_company_card, map_page karusel balandligi; Codex asosiy — home banner entity/datasource/provider, promo_carousel, home_page va umumiy tekshiruv. Bu hududlarga parallel tashqi o'zgartirish kiritmang.
+
+### Codex — telefon kartalarini yakunlash (2026-10-12)
+Doston yana mahsulot/kategoriya kartalari, savat rasmi, xarita kartasi va admin reklamasini tuzatishni so'radi. Mavjud tugallanmagan o'zgarishlarni o'qib tekshiraman; serverlar qayta ishga tushirilmaydi. Xarita karuseli o'z hududimda tuzatiladi. Claude (dizayn): core, home/cart/catalog va admin-panel/supabase dagi qolgan ishlarni Codex yakunlashiga hududni topshirishni so'rayman; avvalgi o'zgarishlar saqlanadi.
+
+Codex tekshiruv natijasi: map_page.dart karusel sloti 190 -> 180 px, kattalashtirilgan matn uchun balandlik avtomatik oshadi. Mahsulot/grid/savat bo'yicha avvalgi tuzatishlar mavjud. Admin Sidebar /banners ga havola beradi, lekin app/banners sahifasi yo'q; setup-sql allowlist'da promo_banners_setup.sql yo'q. Shu sababli reklama hali tugallanmagan. Boshqa hududlarni yakunlash uchun Dostonning hudud topshirish javobi kutilmoqda. Dart analyze boshlangan; hozircha natija chiqmagan.
+
+### Codex — hudud topshirildi (2026-10-12)
+Doston chatda: Ha, hammasini yakunla. Mahsulot/core/cart/home/kategoriya va admin reklama ishlarini yakunlash vakolati berildi. Shu fayllarda ishlayman, mavjud o'zgarishlarni saqlayman.
+
+### Codex — telefon kartalari va admin reklama yakunlandi (2026-10-12)
+Doston bergan hudud topshirish vakolati bilan mavjud ish yakunlandi. Telefonda mahsulot gridi ikki ustun, karta balandligi 280 px, rasmlar bir xil 128 px ichki maydonda contain; savat/checkout/order/tracking haqiqiy ProductThumb'dan foydalanadi. Uzun nomda haqiqiy Roboto bilan topilgan 2 px vertikal overflow tuzatildi. Kategoriya kartalari bir xil o'lchamda. Xarita kartasi padding/logo/gaplari ixcham, karusel 168 px; kattalashtirilgan matnda slot o'sadi va qatorlar sig'adi.
+Admin /banners: yaratish, tahrirlash, PNG/JPG/WEBP yuklash (5 MB), URL, rang, belgi, havola/toifa, tartib raqami, yoqish/yashirish, tasdiqlab o'chirish va preview. Setup SQL API allowlist kengaydi; Next build tracing SQL'ni paketga qo'shishi tekshirildi. Ilova admin bannerlarini Supabase'dan oladi; jadval mavjud bo'lmasa standartlari qoladi, barcha bannerlar o'chirilsa karusel yashiriladi. Bosh sahifani pastga tortish bannerlarni qayta oladi.
+Tekshiruv: Dart analyze No issues; barcha Flutter testlari 110/110; haqiqiy Roboto bilan responsive 37/37 va yakuniy map 3/3; admin TypeScript/lint toza, production Next build muvaffaqiyatli (/banners mavjud); banner validatsiyasi 13 ta tekshiruv; yakuniy Flutter web build muvaffaqiyatli. Renderlar .codex/verification/renders ichida.
+Cheklov: localhost:3000 javob bermadi, serverlar qayta ishga tushirilmadi. Jonli DB'da CRUD sinalmadi, promo_banners_setup.sql hali Supabase'da ishga tushirilmadi. Commit va deploy qilinmadi; .env.local tegilmadi.
+
+### Codex — commit va push (2026-10-12)
+Doston PUSH QIL buyrug'ini berdi. Telefon kartalari va admin reklama o'zgarishlarini feat/supabase-panels-and-ui branchida commit qilib origin'ga push qilaman. Lokal QA renderlari (.codex/verification), build natijalari va .env.local commitga kiritilmaydi.

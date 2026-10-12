@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../app/theme/colors.dart';
 import '../../../../app/theme/dimensions.dart';
@@ -27,6 +28,8 @@ import '../../../orders/domain/entities/order.dart';
 import '../../../orders/presentation/providers/order_provider.dart';
 import '../../../admin/presentation/providers/admin_provider.dart';
 import '../../../products/presentation/providers/product_provider.dart';
+import '../../domain/entities/promo_banner.dart';
+import '../providers/promo_banner_provider.dart';
 import '../widgets/home_header.dart';
 
 class HomePage extends ConsumerWidget {
@@ -39,6 +42,7 @@ class HomePage extends ConsumerWidget {
     final recentOrders = ref.watch(ordersProvider).take(2).toList();
     final activeOrder = ref.watch(currentOrderProvider);
     final promoActive = ref.watch(promoBannerActiveProvider);
+    final banners = ref.watch(promoBannersProvider);
 
     return Scaffold(
       // The header sits on the plain page background now, so the status
@@ -50,9 +54,10 @@ class HomePage extends ConsumerWidget {
         child: RefreshIndicator(
           color: context.palette.primary,
           backgroundColor: context.palette.surface,
-          onRefresh: () {
+          onRefresh: () async {
             AppHaptics.selection();
-            return Future<void>.delayed(const Duration(milliseconds: 700));
+            ref.invalidate(promoBannersProvider);
+            await ref.read(promoBannersProvider.future);
           },
           child: CustomScrollView(
             slivers: [
@@ -80,7 +85,9 @@ class HomePage extends ConsumerWidget {
                   child: _CategoryRail(),
                 ),
               ),
-              if (promoActive)
+              // Banners come from the admin panel's "Reklama" section; the
+              // admin can switch them all off, and then the slot goes too.
+              if (promoActive && (banners.valueOrNull?.isNotEmpty ?? true))
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(
@@ -89,44 +96,14 @@ class HomePage extends ConsumerWidget {
                       AppDimensions.gutter,
                       0,
                     ),
-                    child: PromoCarousel(
-                      slides: [
-                        PromoSlide(
-                          title: 'Suyultirilgan gaz',
-                          caption: 'Subsidiya narxida, aholi uchun',
-                          accent: AppColors.success,
-                          footIcon: Icons.savings_outlined,
-                          icon: Icons.local_fire_department_rounded,
-                          onTap: () {
-                            ref.read(categoryFilterProvider.notifier).state =
-                                ServiceCategory.suyultirilganGaz;
-                            context.go('/catalog');
-                          },
-                        ),
-                        PromoSlide(
-                          title: 'Gaz ballon yetkazish',
-                          caption: '35 daqiqada eshigingizga',
-                          accent: AppColors.primary,
-                          footIcon: Icons.local_shipping_outlined,
-                          motionLines: true,
-                          image: 'assets/images/promo_gas_cylinder.png',
-                          icon: Icons.propane_tank_rounded,
-                          onTap: () {
-                            ref.read(categoryFilterProvider.notifier).state =
-                                ServiceCategory.gazBallon;
-                            context.go('/catalog');
-                          },
-                        ),
-                        PromoSlide(
-                          title: 'Elektr quvvatlash',
-                          caption: 'Zaryadlash tarmog‘i kengaymoqda',
-                          accent: AppColors.energyElectric,
-                          footIcon: Icons.ev_station_outlined,
-                          icon: Icons.bolt_rounded,
-                          onTap: () => context.push('/services'),
-                        ),
-                      ],
-                    ),
+                    child: banners.hasValue
+                        ? PromoCarousel(
+                            slides: [
+                              for (final banner in banners.value!)
+                                _slideFor(context, ref, banner),
+                            ],
+                          )
+                        : const PromoCarouselPlaceholder(),
                   ),
                 ),
               SliverToBoxAdapter(
@@ -147,8 +124,9 @@ class HomePage extends ConsumerWidget {
                         badge: product.hasDiscount
                             ? '-${product.discountPercent}%'
                             : (product.isPopular ? 'TOP' : null),
-                        badgeTone:
-                            product.hasDiscount ? PillTone.danger : PillTone.flame,
+                        badgeTone: product.hasDiscount
+                            ? PillTone.danger
+                            : PillTone.flame,
                         onTap: () => context.push('/product/${product.id}'),
                         onAdd: () {
                           ref.read(cartProvider.notifier).add(product);
@@ -209,8 +187,8 @@ class HomePage extends ConsumerWidget {
                         const SizedBox(height: AppDimensions.space10),
                     itemBuilder: (context, i) => _RecentOrderRow(
                       order: recentOrders[i],
-                      onTap: () =>
-                          context.push('/orders/${recentOrders[i].id}/tracking'),
+                      onTap: () => context
+                          .push('/orders/${recentOrders[i].id}/tracking'),
                     ),
                   ),
                 ),
@@ -224,6 +202,68 @@ class HomePage extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// A banner from the admin panel as a carousel slide: its picture or icon,
+/// and where a tap takes the buyer.
+PromoSlide _slideFor(BuildContext context, WidgetRef ref, PromoBanner banner) {
+  final (icon, footIcon, motion) = switch (banner.icon) {
+    'cylinder' => (
+        Icons.propane_tank_rounded,
+        Icons.local_shipping_outlined,
+        true,
+      ),
+    'truck' => (
+        Icons.local_shipping_rounded,
+        Icons.local_shipping_outlined,
+        true,
+      ),
+    'bolt' => (Icons.bolt_rounded, Icons.ev_station_outlined, false),
+    'tag' => (Icons.local_offer_rounded, Icons.percent_rounded, false),
+    _ => (Icons.local_fire_department_rounded, Icons.savings_outlined, false),
+  };
+  return PromoSlide(
+    title: banner.title,
+    caption: banner.caption,
+    accent: banner.accent,
+    icon: icon,
+    footIcon: footIcon,
+    motionLines: motion,
+    image: banner.assetPath,
+    imageUrl: banner.networkUrl,
+    onTap: _bannerAction(context, ref, banner),
+  );
+}
+
+VoidCallback? _bannerAction(
+    BuildContext context, WidgetRef ref, PromoBanner banner) {
+  final link = banner.link;
+  if (link == 'services') return () => context.push('/services');
+  if (link.startsWith('category:')) {
+    final name = link.substring('category:'.length);
+    final category =
+        ServiceCategory.values.where((c) => c.name == name).firstOrNull;
+    if (category == null) return null;
+    return () {
+      ref.read(categoryFilterProvider.notifier).state = category;
+      context.go('/catalog');
+    };
+  }
+  if (link.startsWith('url:')) {
+    final uri = banner.externalUri;
+    if (uri == null) return null;
+    return () async {
+      try {
+        if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
+      } catch (_) {
+        // A browser or device can refuse an otherwise valid web link.
+      }
+      if (context.mounted) {
+        AppToast.show(context, 'Havolani ochib bo‘lmadi');
+      }
+    };
+  }
+  return null;
 }
 
 /// Live order strip — the highest-value thing on the screen for anyone
@@ -271,13 +311,15 @@ class _LiveOrderCard extends StatelessWidget {
                       '${order.companyName} · taxminan ${AppFormatters.time(order.eta)} da',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTypography.caption.copyWith(color: c.textSecondary),
+                      style: AppTypography.caption
+                          .copyWith(color: c.textSecondary),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: AppDimensions.space8),
-              Icon(Icons.chevron_right_rounded, color: c.textTertiary, size: 20),
+              Icon(Icons.chevron_right_rounded,
+                  color: c.textTertiary, size: 20),
             ],
           ),
           const SizedBox(height: AppDimensions.space12),
@@ -390,7 +432,10 @@ class _CompanyTile extends StatelessWidget {
             const SizedBox(height: 6),
             Align(
               alignment: Alignment.centerLeft,
-              child: AppPill(label: company.tags.first, tone: PillTone.primary, dense: true),
+              child: AppPill(
+                  label: company.tags.first,
+                  tone: PillTone.primary,
+                  dense: true),
             ),
           ],
           const Spacer(),

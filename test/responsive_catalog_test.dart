@@ -12,6 +12,9 @@ import 'package:gaz_energiya/core/widgets/category_artwork.dart';
 import 'package:gaz_energiya/core/widgets/category_filter_bar.dart';
 import 'package:gaz_energiya/core/widgets/responsive_frame.dart';
 import 'package:gaz_energiya/core/widgets/service_category_grid.dart';
+import 'package:gaz_energiya/core/widgets/product_card.dart';
+import 'package:gaz_energiya/core/widgets/map_company_card.dart';
+import 'package:gaz_energiya/features/companies/domain/entities/company.dart';
 import 'package:gaz_energiya/features/catalog/presentation/pages/catalog_page.dart';
 import 'package:gaz_energiya/features/companies/presentation/pages/company_list_page.dart';
 import 'package:gaz_energiya/features/companies/presentation/providers/company_provider.dart';
@@ -110,6 +113,7 @@ void main() {
 
   for (final size in [
     const Size(320, 640),
+    const Size(360, 800),
     const Size(390, 844),
     const Size(768, 600),
     const Size(1280, 800)
@@ -133,6 +137,15 @@ void main() {
           await tester.drag(scroll, const Offset(0, -550));
           await tester.pump(const Duration(milliseconds: 300));
           expect(tester.takeException(), isNull);
+          if (entry.key == 'catalog' && size.width <= 390) {
+            final cards = find.byType(ProductCard);
+            expect(cards, findsNWidgets(2));
+            final first = tester.getRect(cards.at(0));
+            final second = tester.getRect(cards.at(1));
+            expect(first.top, second.top);
+            expect(first.size, second.size);
+            expect(first.width, lessThan(size.width / 2));
+          }
         });
       }
     }
@@ -161,6 +174,8 @@ void main() {
     await tester.tap(find.text('Barchasi').hitTestable());
     await tester.pump();
     expect(selected, isNull);
+    await tester.tap(find.byTooltip('Keyingi toifalar'));
+    await tester.pump(const Duration(milliseconds: 250));
     await tester.tap(find.text('Gaz ballon').hitTestable());
     await tester.pump();
     expect(selected, ServiceCategory.gazBallon);
@@ -229,4 +244,42 @@ void main() {
     expect(tester.takeException(), isNull);
     await capture(tester, 'catalog-dark');
   });
+
+  for (final scale in [1.0, 1.25, 2.0]) {
+    testWidgets('compact map card fits phone at $scale text', (tester) async {
+      addTearDown(tester.view.reset);
+      await host(tester, Scaffold(body: Builder(builder: (context) {
+        return Align(
+            alignment: Alignment.bottomCenter,
+            child: SizedBox(
+              width: 224,
+              height: MapCompanyCard.slotHeightFor(context),
+              child: Padding(
+                padding: const EdgeInsets.only(top: 4, bottom: 8),
+                child: MapCompanyCard(
+                  company: const Company(
+                      id: 'map-test',
+                      name: 'Uzun nomli gaz kompaniyasi',
+                      logoUrl: '',
+                      rating: 4.9,
+                      reviewCount: 1234,
+                      distanceKm: 0.4,
+                      productPrice: 400000,
+                      deliveryFee: 15000,
+                      etaMinutes: 40,
+                      workingHours: '09:00 - 21:00',
+                      isAvailable: true,
+                      latitude: 0,
+                      longitude: 0),
+                  width: double.infinity,
+                  selected: true,
+                  onTap: () {},
+                ),
+              ),
+            ));
+      })), width: 320, scale: scale);
+      expect(tester.takeException(), isNull);
+      if (scale == 1) await capture(tester, 'map-card-320');
+    });
+  }
 }

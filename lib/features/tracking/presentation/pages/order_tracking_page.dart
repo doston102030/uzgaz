@@ -24,6 +24,7 @@ import '../../../../core/widgets/pulsing_marker.dart';
 import '../../../../core/utils/dash_path.dart';
 import '../../../orders/domain/entities/order.dart';
 import '../../../orders/presentation/providers/order_provider.dart';
+import '../../../products/presentation/providers/product_provider.dart';
 
 class OrderTrackingPage extends ConsumerWidget {
   const OrderTrackingPage({super.key, required this.orderId});
@@ -214,6 +215,11 @@ class OrderTrackingPage extends ConsumerWidget {
                               title: order.items[i].productName,
                               price: order.items[i].price,
                               quantity: order.items[i].quantity,
+                              imageUrl: ref
+                                  .watch(productByIdProvider(
+                                      order.items[i].productId))
+                                  ?.gallery
+                                  .firstOrNull,
                               visual: EnergyVisualX.fromCategory(
                                 order.items[i].categoryId,
                                 name: order.items[i].productName,

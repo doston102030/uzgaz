@@ -164,6 +164,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                             subtitle: items[i].product.companyName,
                             price: items[i].product.price,
                             quantity: items[i].quantity,
+                            imageUrl: items[i].product.gallery.firstOrNull,
                             visual: EnergyVisualX.fromCategory(
                               items[i].product.categoryId,
                               name: items[i].product.name,

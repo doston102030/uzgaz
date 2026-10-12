@@ -19,8 +19,10 @@ class CategoryFilterBar extends StatefulWidget {
   final Map<ServiceCategory, int> counts;
   final ValueChanged<ServiceCategory?> onSelected;
 
-  static double heightFor(BuildContext context) =>
-      80 + (MediaQuery.textScalerOf(context).scale(12) - 12) * 2.5;
+  static double heightFor(BuildContext context) {
+    final scaler = MediaQuery.textScalerOf(context);
+    return 32 + scaler.scale(12) * 2.5 + scaler.scale(11) * 1.3;
+  }
 
   @override
   State<CategoryFilterBar> createState() => _CategoryFilterBarState();
@@ -78,7 +80,9 @@ class _CategoryFilterBarState extends State<CategoryFilterBar> {
   @override
   Widget build(BuildContext context) {
     final c = context.palette;
-    final scale = MediaQuery.textScalerOf(context).scale(12) / 12;
+    final scaler = MediaQuery.textScalerOf(context);
+    final scale = (scaler.scale(12) / 12).clamp(1.0, double.infinity);
+    final total = widget.counts.values.fold<int>(0, (sum, count) => sum + count);
     return SizedBox(
       height: CategoryFilterBar.heightFor(context),
       child: Row(children: [
@@ -105,13 +109,16 @@ class _CategoryFilterBarState extends State<CategoryFilterBar> {
                   child: Semantics(
                     button: true,
                     selected: category == widget.selected,
+                    label: '${category?.titleUz ?? 'Barchasi'}, '
+                        '${category == null ? total : widget.counts[category] ?? 0} ta mahsulot',
+                    excludeSemantics: true,
                     child: AppTappable(
                       onTap: () => widget.onSelected(category),
                       child: AnimatedContainer(
                         duration: MediaQuery.disableAnimationsOf(context)
                             ? Duration.zero
                             : const Duration(milliseconds: 180),
-                        width: (category == null ? 110 : 144) * scale,
+                        width: 150 * scale,
                         padding: const EdgeInsets.symmetric(horizontal: 9),
                         decoration: BoxDecoration(
                           color: category == widget.selected
@@ -126,30 +133,42 @@ class _CategoryFilterBarState extends State<CategoryFilterBar> {
                               width: category == widget.selected ? 1.5 : 1),
                         ),
                         child: Row(children: [
-                          if (category == null)
-                            Icon(Icons.grid_view_rounded,
-                                size: 24, color: c.primary)
-                          else
-                            CategoryArtwork(category: category, size: 36),
+                          SizedBox.square(
+                            dimension: 36,
+                            child: category == null
+                                ? Icon(Icons.grid_view_rounded,
+                                    size: 24, color: c.primary)
+                                : CategoryArtwork(category: category, size: 36),
+                          ),
                           const SizedBox(width: 7),
                           Expanded(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(category?.titleUz ?? 'Barchasi',
-                                    maxLines: 2,
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        height: 1.25,
-                                        fontWeight: FontWeight.w700,
-                                        color: c.textPrimary)),
-                                if (category != null &&
-                                    (widget.counts[category] ?? 0) > 0)
-                                  Text('${widget.counts[category]} ta',
-                                      style: TextStyle(
-                                          fontSize: 10,
-                                          color: c.textSecondary)),
+                                SizedBox(
+                                  height: scaler.scale(12) * 2.5,
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(category?.titleUz ?? 'Barchasi',
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            height: 1.25,
+                                            fontWeight: FontWeight.w700,
+                                            color: c.textPrimary)),
+                                  ),
+                                ),
+                                Text(
+                                  '${category == null ? total : widget.counts[category] ?? 0} ta',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      height: 1.3,
+                                      color: c.textSecondary),
+                                ),
                               ],
                             ),
                           ),

@@ -3,7 +3,7 @@ import path from "path";
 
 // The Tizim page copies a setup file's full text for the Supabase SQL Editor.
 // Only these files, read from the repo's supabase/ folder next to the panel.
-const FILES = new Set(["seller_workflow_setup.sql", "seller_login_setup.sql", "marketplace_setup.sql"]);
+const FILES = new Set(["seller_workflow_setup.sql", "seller_login_setup.sql", "marketplace_setup.sql", "promo_banners_setup.sql"]);
 
 export const dynamic = "force-dynamic";
 

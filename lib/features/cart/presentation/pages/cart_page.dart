@@ -14,6 +14,7 @@ import '../../../../core/widgets/custom_dialog.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/price_row.dart';
 import '../../../../core/widgets/product_illustration.dart';
+import '../../../../core/widgets/product_thumb.dart';
 import '../../../../core/widgets/quantity_selector.dart';
 import '../../../checkout/presentation/providers/checkout_provider.dart';
 import '../../domain/entities/cart_item.dart';
@@ -214,7 +215,8 @@ class _CartRow extends ConsumerWidget {
         onTap: () => context.push('/product/${item.product.id}'),
         child: Row(
           children: [
-            EnergyAvatar(
+            ProductThumb(
+              imageUrl: item.product.gallery.firstOrNull,
               visual: EnergyVisualX.fromCategory(
                 item.product.categoryId,
                 name: item.product.name,

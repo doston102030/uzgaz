@@ -39,8 +39,7 @@ class MapPage extends ConsumerStatefulWidget {
 
 class _MapPageState extends ConsumerState<MapPage>
     with TickerProviderStateMixin {
-  final PageController _pageController =
-      PageController(viewportFraction: 0.78);
+  final PageController _pageController = PageController(viewportFraction: 0.78);
   late final AnimatedMapController _mapController;
   int _selected = 0;
 
@@ -135,8 +134,8 @@ class _MapPageState extends ConsumerState<MapPage>
       final position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high);
       if (!mounted) return;
-      setState(
-          () => _myLocation = (lat: position.latitude, lng: position.longitude));
+      setState(() =>
+          _myLocation = (lat: position.latitude, lng: position.longitude));
       _mapController.animateTo(
         dest: LatLng(position.latitude, position.longitude),
         zoom: 15,
@@ -155,13 +154,13 @@ class _MapPageState extends ConsumerState<MapPage>
   Widget build(BuildContext context) {
     final c = context.palette;
     final companies = ref.watch(sortedCompaniesProvider);
-    final selectedIndex = companies.isEmpty ? 0 : _selected.clamp(0, companies.length - 1);
+    final selectedIndex =
+        companies.isEmpty ? 0 : _selected.clamp(0, companies.length - 1);
     final topPad = MediaQuery.paddingOf(context).top;
     final bottomPad = MediaQuery.paddingOf(context).bottom;
 
-    final userLatLng = _myLocation == null
-        ? null
-        : LatLng(_myLocation!.lat, _myLocation!.lng);
+    final userLatLng =
+        _myLocation == null ? null : LatLng(_myLocation!.lat, _myLocation!.lng);
 
     return Scaffold(
       body: Stack(
@@ -214,29 +213,30 @@ class _MapPageState extends ConsumerState<MapPage>
                   ),
                 MarkerLayer(
                   markers: [
-                    if (userLatLng != null) Marker(
-                      point: userLatLng,
-                      width: 40,
-                      height: 40,
-                      child: PulsingMarker(
-                        color: c.primary,
-                        child: Container(
-                          width: 15,
-                          height: 15,
-                          decoration: BoxDecoration(
-                            color: c.primary,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 3),
-                            boxShadow: [
-                              BoxShadow(
-                                color: c.primary.withValues(alpha: 0.5),
-                                blurRadius: 10,
-                              ),
-                            ],
+                    if (userLatLng != null)
+                      Marker(
+                        point: userLatLng,
+                        width: 40,
+                        height: 40,
+                        child: PulsingMarker(
+                          color: c.primary,
+                          child: Container(
+                            width: 15,
+                            height: 15,
+                            decoration: BoxDecoration(
+                              color: c.primary,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 3),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: c.primary.withValues(alpha: 0.5),
+                                  blurRadius: 10,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
                     for (int i = 0; i < companies.length; i++)
                       Marker(
                         point: LatLng(
@@ -305,7 +305,8 @@ class _MapPageState extends ConsumerState<MapPage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppDimensions.gutter),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppDimensions.gutter),
                     child: Row(
                       children: [
                         Expanded(
@@ -330,9 +331,11 @@ class _MapPageState extends ConsumerState<MapPage>
                     height: AppDimensions.chipHeight,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.gutter),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppDimensions.gutter),
                       itemCount: AndijonDistrict.values.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: AppDimensions.space8),
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(width: AppDimensions.space8),
                       itemBuilder: (context, i) {
                         final district = AndijonDistrict.values[i];
                         return AppChip(
@@ -394,7 +397,8 @@ class _MapPageState extends ConsumerState<MapPage>
                         children: [
                           Flexible(
                             child: AppPill(
-                              label: 'Yaqin atrofda ${companies.length} ta filial',
+                              label:
+                                  'Yaqin atrofda ${companies.length} ta filial',
                               tone: PillTone.primary,
                               icon: Icons.place_rounded,
                             ),
@@ -436,7 +440,7 @@ class _MapPageState extends ConsumerState<MapPage>
                     ),
                     const SizedBox(height: AppDimensions.space10),
                     SizedBox(
-                      height: 190,
+                      height: MapCompanyCard.slotHeightFor(context),
                       child: PageView.builder(
                         controller: _pageController,
                         itemCount: companies.length,
@@ -449,7 +453,9 @@ class _MapPageState extends ConsumerState<MapPage>
                           final company = companies[i];
                           return Padding(
                             padding: EdgeInsets.only(
-                              left: i == 0 ? AppDimensions.gutter : AppDimensions.space6,
+                              left: i == 0
+                                  ? AppDimensions.gutter
+                                  : AppDimensions.space6,
                               right: AppDimensions.space6,
                               top: AppDimensions.space4,
                               bottom: AppDimensions.space8,
@@ -460,11 +466,14 @@ class _MapPageState extends ConsumerState<MapPage>
                               selected: i == selectedIndex,
                               onTap: () => _select(i),
                               onSelect: () {
-                                ref.read(selectedCompanyProvider.notifier).state =
-                                    company;
-                                ref.read(deliveryMethodProvider.notifier).state =
-                                    DeliveryMethod.selfPickup;
-                                context.push('/delivery-method', extra: company);
+                                ref
+                                    .read(selectedCompanyProvider.notifier)
+                                    .state = company;
+                                ref
+                                    .read(deliveryMethodProvider.notifier)
+                                    .state = DeliveryMethod.selfPickup;
+                                context.push('/delivery-method',
+                                    extra: company);
                               },
                             ),
                           );
@@ -570,7 +579,8 @@ class _MapMarker extends StatelessWidget {
               if (selected)
                 Container(
                   margin: const EdgeInsets.only(bottom: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                   decoration: BoxDecoration(
                     color: c.surface,
                     borderRadius: AppDimensions.brPill,

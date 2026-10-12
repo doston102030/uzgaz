@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { ProductCategory } from "./categories";
+import { BannerInput, cleanBanner, PromoBanner } from "./banners";
 import {
   ModerationStatus,
   Order,
@@ -437,11 +438,12 @@ async function exists(probe: PromiseLike<{ error: { code?: string; message: stri
 }
 
 export async function checkSetup(): Promise<SetupCheck[]> {
-  const [sellers, logins, orders, categories, mirror] = await Promise.all([
+  const [sellers, logins, orders, categories, banners, mirror] = await Promise.all([
     exists(supabase.from("sellers").select("id").limit(1)),
     exists(supabase.rpc("seller_logins")),
     exists(supabase.from("orders").select("id").limit(1)),
     exists(supabase.from("product_categories").select("id").limit(1)),
+    exists(supabase.from("promo_banners").select("id, title, caption, accent, image_url, icon, link, sort_order, is_active, created_at").limit(1)),
     // Every seller mirrored into companies (the products foreign key needs it).
     (async () => {
       const [{ data: s, error: e1 }, { data: c, error: e2 }] = await Promise.all([
@@ -472,5 +474,81 @@ export async function checkSetup(): Promise<SetupCheck[]> {
       detail: "orders, product_categories jadvallari; sotuvchi mahsulot qo'sha olishi",
       ok: orders === null || categories === null || mirror === null ? null : orders && categories && mirror,
     },
+    {
+      file: "promo_banners_setup.sql",
+      title: "Reklama bannerlari",
+      detail: "bosh sahifa bannerlari, rasmlari va ko'rsatish tartibi",
+      ok: banners,
+    },
   ];
+}
+
+// ── Home-page advertising (supabase/promo_banners_setup.sql) ──────
+
+export const BANNERS_SETUP_HINT =
+  "Reklama jadvali hali yo'q. Tizim bo'limidan promo_banners_setup.sql faylini olib, Supabase SQL Editor'da ishga tushiring.";
+
+interface BannerRow {
+  id: string; title: string; caption: string; accent: string; image_url: string | null;
+  icon: PromoBanner["icon"]; link: string; sort_order: number; is_active: boolean; created_at: string;
+}
+
+const BANNER_COLUMNS = "id, title, caption, accent, image_url, icon, link, sort_order, is_active, created_at";
+const missingBannerSchema = (error: { code?: string }) =>
+  isMissing(error) || error.code === "PGRST204" || error.code === "42703" || error.code === "42883";
+
+function bannerError(error: { code?: string; message: string }): Error {
+  if (missingBannerSchema(error)) return new Error(BANNERS_SETUP_HINT);
+  if (error.message === "banner_order_stale") return new Error("Bannerlar ro'yxati o'zgardi. Yangilab, qayta tartiblang.");
+  if (error.code === "PGRST116") return new Error("Banner topilmadi. Ro'yxatni yangilang.");
+  if (error.code === "23514") return new Error("Banner ma'lumotlari talablarga mos emas. Maydonlarni tekshiring.");
+  return new Error(error.message);
+}
+
+function bannerFromRow(row: BannerRow): PromoBanner {
+  return { id: row.id, title: row.title, caption: row.caption, accent: row.accent,
+    imageUrl: row.image_url, icon: row.icon, link: row.link, sortOrder: row.sort_order,
+    isActive: row.is_active, createdAt: row.created_at };
+}
+
+function bannerToRow(input: BannerInput) {
+  const b = cleanBanner(input);
+  return { title: b.title, caption: b.caption, accent: b.accent, image_url: b.imageUrl,
+    icon: b.icon, link: b.link, sort_order: b.sortOrder, is_active: b.isActive };
+}
+
+export async function fetchBanners(): Promise<{ banners: PromoBanner[]; ready: boolean }> {
+  const { data, error } = await supabase.from("promo_banners").select(BANNER_COLUMNS)
+    .order("sort_order").order("created_at").order("id");
+  if (error) {
+    if (missingBannerSchema(error)) return { banners: [], ready: false };
+    throw bannerError(error);
+  }
+  return { banners: (data as BannerRow[]).map(bannerFromRow), ready: true };
+}
+
+export async function createBanner(input: BannerInput): Promise<PromoBanner> {
+  const { data, error } = await supabase.from("promo_banners")
+    .insert({ id: crypto.randomUUID(), ...bannerToRow(input) }).select(BANNER_COLUMNS).single();
+  if (error) throw bannerError(error);
+  return bannerFromRow(data as BannerRow);
+}
+
+export async function updateBanner(id: string, input: BannerInput): Promise<PromoBanner> {
+  const { data, error } = await supabase.from("promo_banners").update(bannerToRow(input))
+    .eq("id", id).select(BANNER_COLUMNS).single();
+  if (error) throw bannerError(error);
+  return bannerFromRow(data as BannerRow);
+}
+
+export async function setBannerActive(id: string, isActive: boolean): Promise<PromoBanner> {
+  const { data, error } = await supabase.from("promo_banners").update({ is_active: isActive })
+    .eq("id", id).select(BANNER_COLUMNS).single();
+  if (error) throw bannerError(error);
+  return bannerFromRow(data as BannerRow);
+}
+
+export async function deleteBanner(id: string) {
+  const { error } = await supabase.from("promo_banners").delete().eq("id", id).select("id").single();
+  if (error) throw bannerError(error);
 }

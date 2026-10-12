@@ -65,10 +65,12 @@ class AppDimensions {
   static const double avatarSizeLarge = 68;
   static const double chipHeight = 36;
   static const double touchTargetMin = 44;
-  /// Edge-to-edge photo at the top of a `ProductCard`. Sized so the photo,
-  /// a two-line name, the seller and a discounted price block still fit
-  /// [productCardHeight] (~304 of 316 at worst) without a dead gap.
-  static const double productImageHeight = 176;
+  /// The photo tile at the top of a `ProductCard`, inset [productPhotoInset]
+  /// from the card's edges. Sized so the tile, a two-line name, the seller
+  /// and a discounted price block still fit [productCardHeight] without a
+  /// dead gap.
+  static const double productImageHeight = 128;
+  static const double productPhotoInset = 8;
 
   /// Fixed height of a `ProductCard` grid tile. Every product grid — home,
   /// catalogue and the loading skeleton — passes this as `mainAxisExtent`
@@ -76,7 +78,7 @@ class AppDimensions {
   /// width, so a narrow phone shrank the card below its content and the
   /// price row overflowed. It also keeps the three grids identical, so the
   /// skeleton doesn't jump when data lands.
-  static const double productCardHeight = 316;
+  static const double productCardHeight = 280;
 
   static const double heroImageHeight = 300;
 

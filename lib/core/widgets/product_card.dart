@@ -16,6 +16,7 @@ import 'app_tappable.dart';
 import 'company_card.dart';
 import 'price_row.dart';
 import 'product_illustration.dart';
+import 'product_thumb.dart';
 
 /// Grid card used on Home ("Mashhur mahsulotlar") and in the catalogue.
 class ProductCard extends StatelessWidget {
@@ -49,48 +50,64 @@ class ProductCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Edge-to-edge photo; the card's own clip rounds the top corners.
-          SizedBox(
-            height: AppDimensions.productImageHeight,
-            width: double.infinity,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                _CardPhoto(
-                  productId: product.id,
-                  images: product.gallery,
-                  fallback: illustration,
+          // Every photo sits in the same soft tile — a transparent cut-out
+          // and a full photo alike — so a row of different pictures still
+          // reads as a row of equal cards.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppDimensions.productPhotoInset,
+              AppDimensions.productPhotoInset,
+              AppDimensions.productPhotoInset,
+              0,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: ColoredBox(
+                color: productPhotoTile(c),
+                child: SizedBox(
+                  height: AppDimensions.productImageHeight,
+                  width: double.infinity,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _CardPhoto(
+                        productId: product.id,
+                        images: product.gallery,
+                        fallback: illustration,
+                      ),
+                      if (badge != null)
+                        Positioned(
+                          left: AppDimensions.space10,
+                          top: AppDimensions.space10,
+                          child: AppPill(
+                              label: badge!,
+                              tone: badgeTone,
+                              dense: true,
+                              filled: true),
+                        ),
+                      if (product.reviewCount > 0)
+                        Positioned(
+                          left: AppDimensions.space10,
+                          bottom: AppDimensions.space10,
+                          child: _RatingChip(
+                            rating: product.rating,
+                            reviewCount: product.reviewCount,
+                          ),
+                        ),
+                      if (!product.isAvailable)
+                        ColoredBox(
+                          color: c.surface.withValues(alpha: 0.72),
+                          child: const Center(
+                            child: AppPill(
+                                label: 'Mavjud emas',
+                                tone: PillTone.neutral,
+                                dense: true),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-                if (badge != null)
-                  Positioned(
-                    left: AppDimensions.space10,
-                    top: AppDimensions.space10,
-                    child: AppPill(
-                        label: badge!,
-                        tone: badgeTone,
-                        dense: true,
-                        filled: true),
-                  ),
-                if (product.reviewCount > 0)
-                  Positioned(
-                    left: AppDimensions.space10,
-                    bottom: AppDimensions.space10,
-                    child: _RatingChip(
-                      rating: product.rating,
-                      reviewCount: product.reviewCount,
-                    ),
-                  ),
-                if (!product.isAvailable)
-                  ColoredBox(
-                    color: c.surface.withValues(alpha: 0.72),
-                    child: const Center(
-                      child: AppPill(
-                          label: 'Mavjud emas',
-                          tone: PillTone.neutral,
-                          dense: true),
-                    ),
-                  ),
-              ],
+              ),
             ),
           ),
           Expanded(
@@ -154,8 +171,8 @@ class ProductCard extends StatelessWidget {
   }
 }
 
-/// The card's photo area. Several photos cross-fade by themselves — each
-/// card on its own beat, so a grid never flips all at once — and only once
+/// The card's photo area. Several photos cross-fade on the shared clock,
+/// and only once
 /// the next photo is loaded. A neutral background keeps the product in focus.
 class _CardPhoto extends StatefulWidget {
   const _CardPhoto(
@@ -279,9 +296,9 @@ class _CardPhotoState extends State<_CardPhoto> {
           ),
           child: ColoredBox(
             key: ValueKey(url),
-            color: context.palette.surface,
+            color: productPhotoTile(context.palette),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
               child: CachedNetworkImage(
                 imageUrl: url,
                 fit: BoxFit.contain,
@@ -294,8 +311,8 @@ class _CardPhotoState extends State<_CardPhoto> {
         ),
         if (images.length > 1)
           Positioned(
-            right: AppDimensions.space10,
-            bottom: AppDimensions.space12,
+            right: AppDimensions.space8,
+            bottom: AppDimensions.space8,
             child: Row(
               children: [
                 for (var i = 0; i < images.length; i++)
@@ -459,6 +476,7 @@ class ProductListTile extends StatelessWidget {
     required this.price,
     this.subtitle,
     this.visual = EnergyVisual.cylinder,
+    this.imageUrl,
     this.trailing,
     this.quantity,
     this.onTap,
@@ -468,6 +486,9 @@ class ProductListTile extends StatelessWidget {
   final int price;
   final String? subtitle;
   final EnergyVisual visual;
+
+  /// The product's photo; [visual] is drawn only when there is none.
+  final String? imageUrl;
   final Widget? trailing;
   final int? quantity;
   final VoidCallback? onTap;
@@ -479,7 +500,7 @@ class ProductListTile extends StatelessWidget {
       onTap: onTap,
       child: Row(
         children: [
-          EnergyAvatar(visual: visual, size: 54),
+          ProductThumb(imageUrl: imageUrl, visual: visual, size: 54),
           const SizedBox(width: AppDimensions.space12),
           Expanded(
             child: Column(
