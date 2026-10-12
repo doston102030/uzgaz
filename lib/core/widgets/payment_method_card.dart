@@ -78,7 +78,8 @@ class PaymentMethodCard extends StatelessWidget {
 
 /// Brand tile — drawn, not bitmapped, so it stays crisp in both themes.
 class PaymentBrandMark extends StatelessWidget {
-  const PaymentBrandMark({super.key, required this.method, this.width = 52, this.height = 36});
+  const PaymentBrandMark(
+      {super.key, required this.method, this.width = 52, this.height = 36});
 
   final PaymentMethod method;
   final double width;
@@ -105,11 +106,21 @@ class PaymentBrandMark extends StatelessWidget {
         ),
       PaymentMethod.payme => (
           const [Color(0xFF0B1F3A), Color(0xFF15304F)],
-          _wordmark('payme', size: 11, color: const Color(0xFF33D9C0), upper: false),
+          _wordmark('payme',
+              size: 11, color: const Color(0xFF33D9C0), upper: false),
         ),
       PaymentMethod.click => (
           const [Color(0xFF00A3E0), Color(0xFF0071BC)],
           _wordmark('click', size: 11, upper: false),
+        ),
+      PaymentMethod.cashOnDelivery => (
+          [context.palette.success, context.palette.success],
+          const Icon(Icons.payments_outlined, color: Colors.white, size: 24),
+        ),
+      PaymentMethod.sellerPrepayment => (
+          [context.palette.primary, context.palette.primary],
+          const Icon(Icons.account_balance_outlined,
+              color: Colors.white, size: 24),
         ),
     };
 

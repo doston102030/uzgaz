@@ -47,7 +47,8 @@ class _OrderConfirmationPageState extends ConsumerState<OrderConfirmationPage>
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space24),
+          padding:
+              const EdgeInsets.symmetric(horizontal: AppDimensions.space24),
           child: Column(
             children: [
               const Spacer(flex: 2),
@@ -62,8 +63,9 @@ class _OrderConfirmationPageState extends ConsumerState<OrderConfirmationPage>
               Text(
                 order == null
                     ? 'Buyurtmangiz muvaffaqiyatli joylashtirildi.'
-                    : '${order.companyName} buyurtmangizni tayyorlashni boshladi. '
-                        'Holatini real vaqtda kuzatishingiz mumkin.',
+                    : order.paymentMethod == PaymentMethod.sellerPrepayment
+                        ? 'Buyurtma sotuvchiga yuborildi. ${order.companyName} bilan bog‘lanib, oldindan to‘lov rekvizitlarini kelishib oling.'
+                        : 'Buyurtma sotuvchiga yuborildi. Mahsulotni olganda to‘laysiz. Holatini kuzatishingiz mumkin.',
                 textAlign: TextAlign.center,
                 style: AppTypography.callout.copyWith(
                   color: c.textSecondary,
@@ -80,7 +82,8 @@ class _OrderConfirmationPageState extends ConsumerState<OrderConfirmationPage>
                         value: order.orderNumber,
                         emphasise: true,
                       ),
-                      Divider(height: AppDimensions.space20, color: c.separator),
+                      Divider(
+                          height: AppDimensions.space20, color: c.separator),
                       _SummaryLine(
                         label: 'Yetkazib berish',
                         value: order.deliveryMethod.labelUz,
@@ -94,9 +97,10 @@ class _OrderConfirmationPageState extends ConsumerState<OrderConfirmationPage>
                             ? '${AppFormatters.time(order.eta)} gacha'
                             : order.companyName,
                       ),
-                      Divider(height: AppDimensions.space20, color: c.separator),
+                      Divider(
+                          height: AppDimensions.space20, color: c.separator),
                       _SummaryLine(
-                        label: 'To‘langan summa',
+                        label: 'Buyurtma summasi',
                         value: AppFormatters.currency(order.total),
                         emphasise: true,
                       ),
@@ -215,7 +219,8 @@ class _SummaryLine extends StatelessWidget {
         Text(
           value,
           style: emphasise
-              ? AppTypography.priceSmall.copyWith(color: c.textPrimary, fontSize: 15)
+              ? AppTypography.priceSmall
+                  .copyWith(color: c.textPrimary, fontSize: 15)
               : AppTypography.callout.copyWith(
                   color: c.textPrimary,
                   fontWeight: FontWeight.w600,

@@ -19,6 +19,10 @@ import 'package:gaz_energiya/features/catalog/presentation/pages/catalog_page.da
 import 'package:gaz_energiya/features/companies/presentation/pages/company_list_page.dart';
 import 'package:gaz_energiya/features/companies/presentation/providers/company_provider.dart';
 import 'package:gaz_energiya/features/home/presentation/pages/home_page.dart';
+import 'package:gaz_energiya/features/payment/presentation/pages/payment_page.dart';
+import 'package:gaz_energiya/core/widgets/custom_dialog.dart';
+import 'package:gaz_energiya/features/checkout/presentation/providers/checkout_provider.dart';
+import 'package:gaz_energiya/features/cart/presentation/providers/cart_provider.dart';
 import 'package:gaz_energiya/features/products/domain/entities/product.dart';
 import 'package:gaz_energiya/features/products/presentation/providers/product_provider.dart';
 
@@ -77,16 +81,20 @@ void main() {
         productsFutureProvider.overrideWith((_) async => [_product, _product]),
         companiesFutureProvider.overrideWith((_) async => []),
       ],
-      child: MaterialApp(
-        theme: dark ? AppTheme.dark : AppTheme.light,
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.linear(scale),
-            disableAnimations: reduceMotion,
+      child: RepaintBoundary(
+        key: const ValueKey('capture'),
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: dark ? AppTheme.dark : AppTheme.light,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(scale),
+              disableAnimations: reduceMotion,
+            ),
+            child: ResponsiveFrame(child: child!),
           ),
-          child: ResponsiveFrame(child: child!),
+          home: page,
         ),
-        home: RepaintBoundary(key: const ValueKey('capture'), child: page),
       ),
     ));
     await tester.pump(const Duration(milliseconds: 450));
@@ -123,6 +131,7 @@ void main() {
         'home': const HomePage(),
         'catalog': const CatalogPage(),
         'companies': const CompanyListPage(),
+        'payment': const PaymentPage(),
       }.entries) {
         testWidgets('${entry.key} fits ${size.width} at $scale text',
             (tester) async {
@@ -243,6 +252,66 @@ void main() {
     await host(tester, const CatalogPage(), dark: true);
     expect(tester.takeException(), isNull);
     await capture(tester, 'catalog-dark');
+    await host(tester, const PaymentPage(), dark: true);
+    expect(tester.takeException(), isNull);
+    await capture(tester, 'payment-dark');
+  });
+
+  for (final dark in [false, true]) {
+    testWidgets('toast follows ${dark ? 'dark' : 'light'} appearance',
+        (tester) async {
+      addTearDown(tester.view.reset);
+      await host(
+          tester,
+          Scaffold(
+              body: Builder(
+            builder: (context) => TextButton(
+                onPressed: () => AppToast.show(
+                    context, 'Mahsulot savatga qo‘shildi',
+                    tone: ToastTone.success),
+                child: const Text('Ko‘rsatish')),
+          )),
+          dark: dark);
+      await tester.tap(find.text('Ko‘rsatish'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      final theme = Theme.of(tester.element(find.byType(SnackBar)));
+      expect(
+          ThemeData.estimateBrightnessForColor(
+              theme.snackBarTheme.backgroundColor!),
+          dark ? Brightness.dark : Brightness.light);
+      expect(tester.takeException(), isNull);
+      await capture(tester, dark ? 'toast-dark' : 'toast-light');
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
+
+  testWidgets('both payment choices keep the cart until confirmation',
+      (tester) async {
+    addTearDown(tester.view.reset);
+    await host(tester, const PaymentPage(), width: 360);
+    final container =
+        ProviderScope.containerOf(tester.element(find.byType(PaymentPage)));
+    container.read(cartProvider.notifier).add(_product);
+    await tester.pump();
+    expect(container.read(paymentMethodProvider), PaymentMethod.cashOnDelivery);
+    await tester.tap(find.text(PaymentMethod.sellerPrepayment.label));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(
+        container.read(paymentMethodProvider), PaymentMethod.sellerPrepayment);
+    await capture(tester, 'payment-prepayment-360');
+    await tester.tap(find.text('Buyurtma berish'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Buyurtmani tasdiqlash'), findsOneWidget);
+    expect(find.textContaining('Ilova pul yechmaydi'), findsOneWidget);
+    await tester.tap(find.text('Bekor qilish'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(container.read(cartProvider), hasLength(1));
+    await tester.tap(find.text(PaymentMethod.cashOnDelivery.label));
+    await tester.pump();
+    expect(container.read(paymentMethodProvider), PaymentMethod.cashOnDelivery);
+    expect(tester.takeException(), isNull);
   });
 
   for (final scale in [1.0, 1.25, 2.0]) {

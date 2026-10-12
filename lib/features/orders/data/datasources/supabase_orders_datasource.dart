@@ -6,7 +6,7 @@ import '../../domain/entities/order.dart';
 /// the buyer places them here, the seller panel moves them along, the
 /// admin panel lists them all.
 const _columns =
-    'id, order_number, company_id, company_name, delivery_method, address, '
+    'id, order_number, company_id, company_name, delivery_method, payment_method, address, '
     'items, delivery_fee, total, status, created_at';
 
 /// Writes a new order; the database assigns the `#GE…` number.
@@ -118,6 +118,10 @@ Order _orderFromRow(Map<String, dynamic> row) {
         ? DeliveryMethod.selfPickup
         : DeliveryMethod.delivery,
     address: row['address'] as String?,
+    paymentMethod: PaymentMethod.values.firstWhere(
+      (method) => method.name == row['payment_method'],
+      orElse: () => PaymentMethod.cashOnDelivery,
+    ),
     deliveryFee: row['delivery_fee'] as int,
   );
 }

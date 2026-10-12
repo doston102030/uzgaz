@@ -275,6 +275,7 @@ export default function OrdersPage() {
                   )}
                 </div>
 
+                {(o.paymentMethod === "cashOnDelivery" || o.paymentMethod === "sellerPrepayment") && <p className="mt-3 rounded-xl bg-brand/5 px-3.5 py-2.5 text-xs font-medium text-foreground/70">{o.paymentMethod === "sellerPrepayment" ? "Oldindan to‘lov — xaridor bilan rekvizitlarni kelishing. To‘lovni alohida tekshiring." : "Mahsulotni olganda to‘laydi."}</p>}
                 <ul className="mt-3 space-y-1 rounded-xl bg-surface-muted px-3.5 py-2.5 text-xs text-foreground/60">
                   {o.items.map((item, i) => (
                     <li key={i} className="flex justify-between gap-3">

@@ -63,6 +63,7 @@ class Order extends Equatable {
     this.address,
     this.deliveryFee = 0,
     this.etaMinutes = 35,
+    this.paymentMethod = PaymentMethod.cashOnDelivery,
   });
 
   final String id;
@@ -80,6 +81,7 @@ class Order extends Equatable {
   final String? address;
   final int deliveryFee;
   final int etaMinutes;
+  final PaymentMethod paymentMethod;
 
   int get itemCount => items.fold(0, (sum, item) => sum + item.quantity);
 
@@ -110,6 +112,7 @@ class Order extends Equatable {
       total: total,
       status: status ?? this.status,
       deliveryMethod: deliveryMethod,
+      paymentMethod: paymentMethod,
       companyId: companyId,
       driver: driver ?? this.driver,
       address: address ?? this.address,

@@ -123,6 +123,7 @@ export interface Order {
   items: OrderItem[];
   total: number;
   deliveryFee: number;
+  paymentMethod?: string;
   status: OrderStatus;
   address: string;
 }

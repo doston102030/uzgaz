@@ -104,6 +104,7 @@ export interface SellerOrder {
   total: number;
   status: SellerOrderStatus;
   deliveryMethod: "delivery" | "selfPickup";
+  paymentMethod?: string;
   address?: string;
   placedAt: string;
 }

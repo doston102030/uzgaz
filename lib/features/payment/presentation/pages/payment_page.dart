@@ -18,9 +18,7 @@ import '../../../orders/presentation/providers/order_provider.dart';
 
 /// Payment screen.
 ///
-/// Security rule from the spec: this screen never collects or stores a
-/// raw card number or CVV. Selecting a card method hands off to the
-/// provider's tokenising SDK — the app only ever sees a token.
+/// Records when the buyer will pay the seller. No money is collected here.
 class PaymentPage extends ConsumerStatefulWidget {
   const PaymentPage({super.key});
 
@@ -32,15 +30,23 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
   bool _loading = false;
 
   Future<void> _pay() async {
+    if (_loading) return;
     final total = ref.read(orderTotalProvider);
     final method = ref.read(paymentMethodProvider);
+    // Online methods must not create a pretend successful payment.
+    if (method != PaymentMethod.cashOnDelivery &&
+        method != PaymentMethod.sellerPrepayment) {
+      return;
+    }
 
     final confirmed = await CustomDialog.confirm(
       context,
       title: 'Buyurtmani tasdiqlash',
-      message: '${method.label} orqali to‘lov amalga oshiriladi.',
+      message: method == PaymentMethod.cashOnDelivery
+          ? 'Mahsulotni qabul qilganda to‘laysiz. Hozir pul yechilmaydi.'
+          : 'Buyurtmadan keyin sotuvchidan rekvizitlarni olib, kelishilgan usulda oldindan to‘laysiz. Ilova pul yechmaydi.',
       highlight: AppFormatters.currency(total),
-      confirmLabel: 'Ha, to‘lash',
+      confirmLabel: 'Buyurtma berish',
       icon: Icons.verified_rounded,
     );
     if (!confirmed || !mounted) return;
@@ -97,8 +103,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     final c = context.palette;
     final total = ref.watch(orderTotalProvider);
     final selected = ref.watch(paymentMethodProvider);
-    final cards = PaymentMethod.values.where((m) => m.isCard).toList();
-    final wallets = PaymentMethod.values.where((m) => !m.isCard).toList();
+    final onDelivery = selected == PaymentMethod.cashOnDelivery;
 
     return Scaffold(
       body: CustomScrollView(
@@ -120,37 +125,37 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                 children: [
                   _TotalCard(total: total),
                   const SizedBox(height: AppDimensions.space24),
-                  Text(
-                    'MILLIY VA XALQARO KARTALAR',
-                    style: AppTypography.overline.copyWith(color: c.textTertiary),
+                  Text('QACHON TO‘LAYSIZ?',
+                      style: AppTypography.overline
+                          .copyWith(color: c.textSecondary)),
+                  const SizedBox(height: AppDimensions.space10),
+                  PaymentMethodCard(
+                    method: PaymentMethod.cashOnDelivery,
+                    selected: onDelivery,
+                    onTap: () => ref
+                        .read(paymentMethodProvider.notifier)
+                        .state = PaymentMethod.cashOnDelivery,
                   ),
                   const SizedBox(height: AppDimensions.space10),
-                  for (final method in cards) ...[
-                    PaymentMethodCard(
-                      method: method,
-                      selected: selected == method,
-                      onTap: () =>
-                          ref.read(paymentMethodProvider.notifier).state = method,
-                    ),
-                    const SizedBox(height: AppDimensions.space10),
-                  ],
-                  const SizedBox(height: AppDimensions.space8),
-                  Text(
-                    'TO‘LOV ILOVALARI',
-                    style: AppTypography.overline.copyWith(color: c.textTertiary),
+                  PaymentMethodCard(
+                    method: PaymentMethod.sellerPrepayment,
+                    selected: !onDelivery,
+                    onTap: () => ref
+                        .read(paymentMethodProvider.notifier)
+                        .state = PaymentMethod.sellerPrepayment,
                   ),
-                  const SizedBox(height: AppDimensions.space10),
-                  for (final method in wallets) ...[
-                    PaymentMethodCard(
-                      method: method,
-                      selected: selected == method,
-                      onTap: () =>
-                          ref.read(paymentMethodProvider.notifier).state = method,
-                    ),
-                    const SizedBox(height: AppDimensions.space10),
+                  const SizedBox(height: AppDimensions.space16),
+                  if (onDelivery)
+                    Text(
+                        'Buyurtmani tasdiqlang. Mahsulotni olganda sotuvchiga to‘laysiz.',
+                        style: AppTypography.callout
+                            .copyWith(color: c.textSecondary)),
+                  if (!onDelivery) ...[
+                    Text(
+                        'Buyurtmadan keyin sotuvchi bilan bog‘lanib, to‘lov rekvizitlari va shartlarini kelishib oling. Ilova kartangizdan pul yechmaydi.',
+                        style: AppTypography.callout
+                            .copyWith(color: c.textSecondary)),
                   ],
-                  const SizedBox(height: AppDimensions.space8),
-                  const PaymentSecurityNote(),
                 ],
               ),
             ),
@@ -168,9 +173,8 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
           child: Padding(
             padding: const EdgeInsets.all(AppDimensions.gutter),
             child: AppButton(
-              label: 'To‘lash',
-              trailingLabel: AppFormatters.currencyShort(total),
-              icon: Icons.lock_rounded,
+              label: 'Buyurtma berish',
+              icon: Icons.check_rounded,
               isLoading: _loading,
               onPressed: total == 0 ? null : _pay,
             ),
@@ -193,15 +197,9 @@ class _TotalCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppDimensions.space20),
       decoration: BoxDecoration(
-        gradient: c.brandGradient,
-        borderRadius: AppDimensions.brXLarge,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.28),
-            blurRadius: 26,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        color: c.surface,
+        borderRadius: AppDimensions.brLarge,
+        border: Border.all(color: c.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,30 +209,34 @@ class _TotalCard extends StatelessWidget {
               Text(
                 'TO‘LOV SUMMASI',
                 style: AppTypography.overline.copyWith(
-                  color: Colors.white.withValues(alpha: 0.78),
+                  color: c.textSecondary,
                 ),
               ),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
+                  color: c.primarySoft,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.shield_rounded, color: Colors.white, size: 15),
+                child: Icon(Icons.shield_outlined, color: c.primary, size: 18),
               ),
             ],
           ),
           const SizedBox(height: AppDimensions.space10),
-          Text(
-            AppFormatters.currency(total),
-            style: AppTypography.largeTitle.copyWith(color: Colors.white),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              AppFormatters.currency(total),
+              style: AppTypography.title1.copyWith(color: c.textPrimary),
+            ),
           ),
           const SizedBox(height: AppDimensions.space4),
           Text(
             'Yetkazib berish narxi hisobga olingan',
             style: AppTypography.caption.copyWith(
-              color: Colors.white.withValues(alpha: 0.72),
+              color: c.textSecondary,
             ),
           ),
         ],

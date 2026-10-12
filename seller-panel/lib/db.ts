@@ -350,12 +350,13 @@ interface OrderRow {
   total: number;
   status: string;
   delivery_method: "delivery" | "selfPickup";
+  payment_method: string;
   address: string | null;
   created_at: string;
 }
 
 const ORDER_COLUMNS =
-  "id, order_number, buyer_name, buyer_phone, items, total, status, delivery_method, address, created_at";
+  "id, order_number, buyer_name, buyer_phone, items, total, status, delivery_method, payment_method, address, created_at";
 
 function orderFromRow(row: OrderRow): SellerOrder {
   return {
@@ -371,6 +372,7 @@ function orderFromRow(row: OrderRow): SellerOrder {
     total: row.total,
     status: ORDER_STATUS_FROM_DB[row.status] ?? "yangi",
     deliveryMethod: row.delivery_method,
+    paymentMethod: row.payment_method,
     address: row.address ?? undefined,
     placedAt: row.created_at,
   };

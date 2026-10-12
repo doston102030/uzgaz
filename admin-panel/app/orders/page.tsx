@@ -308,6 +308,7 @@ function OrdersPageContent() {
                 {viewing.address || "Manzil ko'rsatilmagan"}
               </p>
             </div>
+            {(viewing.paymentMethod === "cashOnDelivery" || viewing.paymentMethod === "sellerPrepayment") && <p className="rounded-xl bg-surface-muted p-3 text-sm">{viewing.paymentMethod === "sellerPrepayment" ? "Sotuvchi bilan kelishib oldindan to‘lash. To‘lov tasdiqlanmagan." : "Mahsulotni olganda to‘lash."}</p>}
             <ul className="divide-y divide-border rounded-xl bg-surface-muted text-sm">
               {viewing.items.map((item, i) => (
                 <li key={i} className="flex justify-between gap-3 px-3.5 py-2.5">

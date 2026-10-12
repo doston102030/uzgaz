@@ -21,7 +21,8 @@ class AppColors {
   static const Color energyMint = Color(0xFF10B981); // metan
   static const Color energySlate = Color(0xFF475569); // dizel
   static const Color energyRose = Color(0xFFE11D48); // market / aksiya
-  static const Color energyGreen = Color(0xFF22C55E); // suyultirilgan gaz — aholi subsidiyasi
+  static const Color energyGreen =
+      Color(0xFF22C55E); // suyultirilgan gaz — aholi subsidiyasi
 
   // ── Status ─────────────────────────────────────────────────────────
   static const Color success = Color(0xFF16A34A);
@@ -44,10 +45,10 @@ class AppColors {
   static const Color white = Color(0xFFFFFFFF);
 
   // Dark-mode canvas (blue-black, like iOS dark on OLED)
-  static const Color inkBackground = Color(0xFF080C14);
-  static const Color inkSurface = Color(0xFF121A28);
-  static const Color inkElevated = Color(0xFF1B2536);
-  static const Color inkBorder = Color(0xFF283349);
+  static const Color inkBackground = Color(0xFF000000);
+  static const Color inkSurface = Color(0xFF1C1C1E);
+  static const Color inkElevated = Color(0xFF2C2C2E);
+  static const Color inkBorder = Color(0xFF38383A);
 
   // Legacy aliases kept so older call sites keep compiling.
   static const Color background = slate50;
@@ -68,7 +69,7 @@ class AppColors {
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF3B82F6), Color(0xFF2563EB), Color(0xFF1D4ED8)],
+    colors: [primary, primary, primary],
     stops: [0, 0.55, 1],
   );
 
@@ -175,17 +176,17 @@ class AppPalette extends ThemeExtension<AppPalette> {
 
   static const AppPalette light = AppPalette(
     brightness: Brightness.light,
-    background: Color(0xFFF6F8FC),
-    backgroundSunken: Color(0xFFEEF2F8),
+    background: Color(0xFFF2F2F7),
+    backgroundSunken: Color(0xFFE5E5EA),
     surface: AppColors.white,
     surfaceElevated: AppColors.white,
-    surfaceMuted: Color(0xFFF1F5F9),
-    border: Color(0xFFE6EAF2),
-    borderStrong: Color(0xFFD6DDEA),
-    separator: Color(0xFFEDF1F7),
-    textPrimary: Color(0xFF0B1526),
-    textSecondary: Color(0xFF5A6B85),
-    textTertiary: Color(0xFF94A3B8),
+    surfaceMuted: Color(0xFFF2F2F7),
+    border: Color(0xFFE5E5EA),
+    borderStrong: Color(0xFFD1D1D6),
+    separator: Color(0xFFE5E5EA),
+    textPrimary: Color(0xFF1C1C1E),
+    textSecondary: Color(0xFF636366),
+    textTertiary: Color(0xFF8E8E93),
     textInverse: AppColors.white,
     primary: AppColors.primary,
     primaryPressed: AppColors.primaryDark,
@@ -206,11 +207,12 @@ class AppPalette extends ThemeExtension<AppPalette> {
       BoxShadow(color: Color(0x080B1526), blurRadius: 2, offset: Offset(0, 1)),
     ],
     shadowMd: [
-      BoxShadow(color: Color(0x120B1526), blurRadius: 20, offset: Offset(0, 8)),
+      BoxShadow(color: Color(0x08000000), blurRadius: 12, offset: Offset(0, 3)),
       BoxShadow(color: Color(0x080B1526), blurRadius: 4, offset: Offset(0, 1)),
     ],
     shadowLg: [
-      BoxShadow(color: Color(0x1A0B1526), blurRadius: 36, offset: Offset(0, 16)),
+      BoxShadow(
+          color: Color(0x1A0B1526), blurRadius: 36, offset: Offset(0, 16)),
       BoxShadow(color: Color(0x0D0B1526), blurRadius: 8, offset: Offset(0, 2)),
     ],
     brandGradient: AppColors.primaryGradient,
@@ -219,20 +221,20 @@ class AppPalette extends ThemeExtension<AppPalette> {
   static const AppPalette dark = AppPalette(
     brightness: Brightness.dark,
     background: AppColors.inkBackground,
-    backgroundSunken: Color(0xFF050810),
+    backgroundSunken: Color(0xFF000000),
     surface: AppColors.inkSurface,
     surfaceElevated: AppColors.inkElevated,
-    surfaceMuted: Color(0xFF1A2434),
-    border: Color(0xFF243044),
-    borderStrong: Color(0xFF33415C),
-    separator: Color(0xFF1E2839),
-    textPrimary: Color(0xFFF2F6FC),
-    textSecondary: Color(0xFF9FB0C9),
-    textTertiary: Color(0xFF6B7C96),
+    surfaceMuted: Color(0xFF2C2C2E),
+    border: Color(0xFF38383A),
+    borderStrong: Color(0xFF48484A),
+    separator: Color(0xFF38383A),
+    textPrimary: Color(0xFFF2F2F7),
+    textSecondary: Color(0xFFAEAEB2),
+    textTertiary: Color(0xFF8E8E93),
     textInverse: Color(0xFF0B1526),
     primary: Color(0xFF5B9BFF),
     primaryPressed: Color(0xFF3B82F6),
-    primarySoft: Color(0xFF15263F),
+    primarySoft: Color(0xFF18283E),
     onPrimary: AppColors.white,
     success: Color(0xFF34D399),
     successSoft: Color(0xFF10261F),
@@ -248,15 +250,17 @@ class AppPalette extends ThemeExtension<AppPalette> {
       BoxShadow(color: Color(0x40000000), blurRadius: 10, offset: Offset(0, 3)),
     ],
     shadowMd: [
-      BoxShadow(color: Color(0x59000000), blurRadius: 24, offset: Offset(0, 10)),
+      BoxShadow(
+          color: Color(0x59000000), blurRadius: 24, offset: Offset(0, 10)),
     ],
     shadowLg: [
-      BoxShadow(color: Color(0x73000000), blurRadius: 40, offset: Offset(0, 18)),
+      BoxShadow(
+          color: Color(0x73000000), blurRadius: 40, offset: Offset(0, 18)),
     ],
     brandGradient: LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [Color(0xFF3B82F6), Color(0xFF2563EB), Color(0xFF1E3A8A)],
+      colors: [AppColors.primary, AppColors.primary, AppColors.primary],
       stops: [0, 0.55, 1],
     ),
   );
@@ -365,7 +369,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
       shadowSm: BoxShadow.lerpList(shadowSm, other.shadowSm, t)!,
       shadowMd: BoxShadow.lerpList(shadowMd, other.shadowMd, t)!,
       shadowLg: BoxShadow.lerpList(shadowLg, other.shadowLg, t)!,
-      brandGradient: LinearGradient.lerp(brandGradient, other.brandGradient, t)!,
+      brandGradient:
+          LinearGradient.lerp(brandGradient, other.brandGradient, t)!,
     );
   }
 }

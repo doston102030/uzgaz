@@ -32,7 +32,8 @@ class CustomDialog {
       transitionDuration: AppMotion.base,
       pageBuilder: (context, _, __) => const SizedBox.shrink(),
       transitionBuilder: (context, animation, _, __) {
-        final curved = CurvedAnimation(parent: animation, curve: AppMotion.spring);
+        final curved =
+            CurvedAnimation(parent: animation, curve: AppMotion.spring);
         return Opacity(
           opacity: animation.value.clamp(0.0, 1.0),
           child: Transform.scale(
@@ -69,7 +70,8 @@ class CustomDialog {
       transitionDuration: AppMotion.base,
       pageBuilder: (context, _, __) => const SizedBox.shrink(),
       transitionBuilder: (context, animation, _, __) {
-        final curved = CurvedAnimation(parent: animation, curve: AppMotion.spring);
+        final curved =
+            CurvedAnimation(parent: animation, curve: AppMotion.spring);
         return Opacity(
           opacity: animation.value.clamp(0.0, 1.0),
           child: Transform.scale(
@@ -173,7 +175,9 @@ class _DialogBody extends StatelessWidget {
                 const SizedBox(height: AppDimensions.space20),
                 AppButton(
                   label: confirmLabel,
-                  variant: destructive ? AppButtonVariant.danger : AppButtonVariant.primary,
+                  variant: destructive
+                      ? AppButtonVariant.danger
+                      : AppButtonVariant.primary,
                   size: AppButtonSize.medium,
                   onPressed: () => Navigator.of(context).pop(true),
                 ),
@@ -375,7 +379,8 @@ class AppSheetOption extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: leading != null ? c.surface : c.tint(accent, 0.14),
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusXSmall + 2),
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusXSmall + 2),
                   ),
                   child: leading ?? Icon(icon, size: 20, color: accent),
                 ),
@@ -519,7 +524,7 @@ class AppToast {
               Expanded(
                 child: Text(
                   message,
-                  style: AppTypography.callout.copyWith(color: Colors.white),
+                  style: AppTypography.callout.copyWith(color: c.textPrimary),
                 ),
               ),
               if (actionLabel != null && onAction != null)

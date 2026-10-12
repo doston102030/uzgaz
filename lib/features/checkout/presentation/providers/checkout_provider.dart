@@ -74,7 +74,7 @@ final orderTotalProvider = Provider<int>((ref) {
 });
 
 final paymentMethodProvider =
-    StateProvider<PaymentMethod>((ref) => PaymentMethod.payme);
+    StateProvider<PaymentMethod>((ref) => PaymentMethod.cashOnDelivery);
 
 /// The order produced by the last successful checkout — read by the
 /// confirmation screen so it can deep-link straight into tracking.

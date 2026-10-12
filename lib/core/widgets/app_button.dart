@@ -63,51 +63,60 @@ class AppButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.palette;
 
-    final (Color fg, Color? bg, Gradient? gradient, Color? border) = switch (variant) {
+    final (Color fg, Color? bg, Gradient? gradient, Color? border) =
+        switch (variant) {
       AppButtonVariant.primary => (c.onPrimary, null, c.brandGradient, null),
       AppButtonVariant.secondary => (
           c.textPrimary,
-          c.isDark ? c.surfaceElevated : const Color(0xFF12203A),
+          c.surfaceMuted,
           null,
           null,
         ),
-      AppButtonVariant.outline => (c.primary, Colors.transparent, null, c.borderStrong),
+      AppButtonVariant.outline => (
+          c.primary,
+          Colors.transparent,
+          null,
+          c.borderStrong
+        ),
       AppButtonVariant.ghost => (c.primary, c.primarySoft, null, null),
       AppButtonVariant.danger => (Colors.white, c.danger, null, null),
       AppButtonVariant.text => (c.primary, Colors.transparent, null, null),
     };
 
-    final foreground = variant == AppButtonVariant.secondary && !c.isDark
-        ? Colors.white
-        : fg;
+    final foreground = _disabled ? c.textTertiary : fg;
 
     Widget content = Row(
       mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-      mainAxisAlignment:
-          trailingLabel != null ? MainAxisAlignment.spaceBetween : MainAxisAlignment.center,
+      mainAxisAlignment: trailingLabel != null
+          ? MainAxisAlignment.spaceBetween
+          : MainAxisAlignment.center,
       children: [
         if (trailingLabel != null) const SizedBox(width: AppDimensions.space4),
         Flexible(
           child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: size == AppButtonSize.small ? 16 : 19, color: foreground),
-              const SizedBox(width: AppDimensions.space8),
-            ],
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: _textStyle.copyWith(color: foreground),
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon,
+                    size: size == AppButtonSize.small ? 16 : 19,
+                    color: foreground),
+                const SizedBox(width: AppDimensions.space8),
+              ],
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _textStyle.copyWith(color: foreground),
+                ),
               ),
-            ),
-            if (trailingIcon != null) ...[
-              const SizedBox(width: AppDimensions.space8),
-              Icon(trailingIcon, size: size == AppButtonSize.small ? 16 : 19, color: foreground),
+              if (trailingIcon != null) ...[
+                const SizedBox(width: AppDimensions.space8),
+                Icon(trailingIcon,
+                    size: size == AppButtonSize.small ? 16 : 19,
+                    color: foreground),
+              ],
             ],
-          ],
           ),
         ),
         if (trailingLabel != null)
@@ -116,7 +125,8 @@ class AppButton extends StatelessWidget {
               trailingLabel!,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppTypography.price.copyWith(color: foreground, fontSize: 16),
+              style:
+                  AppTypography.price.copyWith(color: foreground, fontSize: 16),
             ),
           ),
       ],
@@ -155,27 +165,14 @@ class AppButton extends StatelessWidget {
           // own line). The content Row centres itself vertically instead.
           alignment: expand ? Alignment.center : null,
           decoration: BoxDecoration(
-            color: _disabled && variant == AppButtonVariant.primary ? c.surfaceMuted : bg,
-            gradient: _disabled && variant == AppButtonVariant.primary ? null : gradient,
+            color: _disabled && variant == AppButtonVariant.primary
+                ? c.surfaceMuted
+                : bg,
+            gradient: _disabled && variant == AppButtonVariant.primary
+                ? null
+                : gradient,
             borderRadius: BorderRadius.circular(_radius),
             border: border != null ? Border.all(color: border) : null,
-            // Small buttons sit inside cards — a full-size glow there
-            // outweighs the card itself, so they get a tighter, softer one.
-            boxShadow: variant == AppButtonVariant.primary && !_disabled
-                ? [
-                    size == AppButtonSize.small
-                        ? BoxShadow(
-                            color: c.primary.withValues(alpha: c.isDark ? 0.26 : 0.22),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          )
-                        : BoxShadow(
-                            color: c.primary.withValues(alpha: c.isDark ? 0.32 : 0.28),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                  ]
-                : null,
           ),
           child: DefaultTextStyle.merge(
             style: _textStyle.copyWith(color: foreground),
@@ -231,7 +228,8 @@ class AppIconButton extends StatelessWidget {
               fill: background ?? c.surface,
               bordered: bordered,
             ),
-            child: Icon(icon, size: iconSize, color: foreground ?? c.textPrimary),
+            child:
+                Icon(icon, size: iconSize, color: foreground ?? c.textPrimary),
           ),
           if (showDot || (badgeCount != null && badgeCount! > 0))
             Positioned(
@@ -242,7 +240,8 @@ class AppIconButton extends StatelessWidget {
                   horizontal: badgeCount != null ? 5 : 0,
                   vertical: 0,
                 ),
-                constraints: BoxConstraints(minWidth: badgeCount != null ? 18 : 10),
+                constraints:
+                    BoxConstraints(minWidth: badgeCount != null ? 18 : 10),
                 height: badgeCount != null ? 18 : 10,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
@@ -347,7 +346,8 @@ BoxDecoration _roundButtonDecoration(
   return BoxDecoration(
     color: fill,
     shape: BoxShape.circle,
-    border: bordered ? Border.all(color: c.border.withValues(alpha: .85)) : null,
+    border:
+        bordered ? Border.all(color: c.border.withValues(alpha: .85)) : null,
     boxShadow: c.isDark
         ? c.shadowSm
         : const [

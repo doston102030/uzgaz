@@ -108,10 +108,12 @@ extension ServiceCategoryX on ServiceCategory {
   /// photo yet — the tile falls back to [icon] + [color].
   String? get photoUrl => switch (this) {
         ServiceCategory.gazBallon => '$_categoryPhotoBase/gaz-ballon.jpg',
-        ServiceCategory.suyultirilganGaz => '$_categoryPhotoBase/suyultirilgan-gaz.jpg',
+        ServiceCategory.suyultirilganGaz =>
+          '$_categoryPhotoBase/suyultirilgan-gaz.jpg',
         ServiceCategory.metanGaz => '$_categoryPhotoBase/metan-gaz.jpg',
         ServiceCategory.propanGaz => '$_categoryPhotoBase/propan-gaz.jpg',
-        ServiceCategory.elektrQuvvatlash => '$_categoryPhotoBase/elektr-quvvatlash.jpg',
+        ServiceCategory.elektrQuvvatlash =>
+          '$_categoryPhotoBase/elektr-quvvatlash.jpg',
         ServiceCategory.benzin => '$_categoryPhotoBase/benzin.jpg',
         ServiceCategory.dizel || ServiceCategory.market => null,
       };
@@ -200,7 +202,13 @@ extension AndijonDistrictX on AndijonDistrict {
 
 /// Names match the `orders.status` values in Supabase
 /// (`supabase/marketplace_setup.sql`) — the seller moves an order along.
-enum OrderStatus { qabulQilindi, tayyorlanmoqda, yolda, yetkazildi, bekorQilindi }
+enum OrderStatus {
+  qabulQilindi,
+  tayyorlanmoqda,
+  yolda,
+  yetkazildi,
+  bekorQilindi
+}
 
 extension OrderStatusX on OrderStatus {
   /// The steps drawn on progress timelines; a cancelled order sits outside it.
@@ -236,7 +244,8 @@ extension DeliveryMethodX on DeliveryMethod {
 
   String get hintUz => switch (this) {
         DeliveryMethod.delivery => 'Kuryer manzilingizga olib keladi',
-        DeliveryMethod.selfPickup => 'Firmadan o‘zingiz olib ketasiz — yetkazish bepul',
+        DeliveryMethod.selfPickup =>
+          'Firmadan o‘zingiz olib ketasiz — yetkazish bepul',
       };
 
   IconData get icon => switch (this) {
@@ -281,7 +290,13 @@ extension ProductModerationStatusX on ProductModerationStatus {
 
 /// Seller-side order lifecycle — a superset the buyer-side [OrderStatus]
 /// maps onto (see [SellerOrderStatusX.toOrderStatus]).
-enum SellerOrderStatus { yangi, tayyorlanmoqda, yetkazishga, yopildi, bekorQilindi }
+enum SellerOrderStatus {
+  yangi,
+  tayyorlanmoqda,
+  yetkazishga,
+  yopildi,
+  bekorQilindi
+}
 
 extension SellerOrderStatusX on SellerOrderStatus {
   String get labelUz => switch (this) {
@@ -301,7 +316,16 @@ extension SellerOrderStatusX on SellerOrderStatus {
       };
 }
 
-enum PaymentMethod { visa, mastercard, uzcard, humo, payme, click }
+enum PaymentMethod {
+  visa,
+  mastercard,
+  uzcard,
+  humo,
+  payme,
+  click,
+  cashOnDelivery,
+  sellerPrepayment
+}
 
 extension PaymentMethodX on PaymentMethod {
   String get label => switch (this) {
@@ -311,6 +335,8 @@ extension PaymentMethodX on PaymentMethod {
         PaymentMethod.humo => 'HUMO',
         PaymentMethod.payme => 'Payme',
         PaymentMethod.click => 'Click',
+        PaymentMethod.cashOnDelivery => 'Yetkazilganda to‘lash',
+        PaymentMethod.sellerPrepayment => 'Sotuvchiga oldindan to‘lash',
       };
 
   String get hintUz => switch (this) {
@@ -320,6 +346,8 @@ extension PaymentMethodX on PaymentMethod {
         PaymentMethod.humo => 'Milliy to‘lov tizimi',
         PaymentMethod.payme => 'Ilova orqali tasdiqlash',
         PaymentMethod.click => 'Ilova orqali tasdiqlash',
+        PaymentMethod.cashOnDelivery => 'Mahsulotni olganda to‘laysiz',
+        PaymentMethod.sellerPrepayment => 'Sotuvchi bilan kelishib to‘laysiz',
       };
 
   bool get isCard => switch (this) {

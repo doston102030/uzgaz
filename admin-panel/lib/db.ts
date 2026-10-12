@@ -259,6 +259,7 @@ interface OrderRow {
   buyer_name: string;
   buyer_phone: string;
   delivery_method: "delivery" | "selfPickup";
+  payment_method: string;
   address: string | null;
   items: { name: string; quantity: number; price: number }[];
   delivery_fee: number;
@@ -279,6 +280,7 @@ function orderFromRow(row: OrderRow): Order {
     items: (row.items ?? []).map((i) => ({ productName: i.name, quantity: i.quantity, price: i.price })),
     total: row.total,
     deliveryFee: row.delivery_fee,
+    paymentMethod: row.payment_method,
     status: row.status,
     address: row.delivery_method === "selfPickup" ? "O'zi olib ketadi" : (row.address ?? ""),
   };

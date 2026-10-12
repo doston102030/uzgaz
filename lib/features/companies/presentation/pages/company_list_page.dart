@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -104,8 +103,9 @@ class CompanyListPage extends ConsumerWidget {
                   highlightTone: company.id == highlights.cheapestId
                       ? PillTone.success
                       : PillTone.primary,
-                  onTap: () =>
-                      ref.read(selectedCompanyProvider.notifier).state = company,
+                  onTap: () => ref
+                      .read(selectedCompanyProvider.notifier)
+                      .state = company,
                   onSelect: () {
                     ref.read(selectedCompanyProvider.notifier).state = company;
                     context.push('/delivery-method', extra: company);
@@ -180,59 +180,31 @@ class _CompaniesHeaderBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.palette;
-    return ClipRRect(
-      borderRadius: AppDimensions.brXLarge,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 112),
-        child: Stack(
-          children: [
-            Positioned.fill(child: CachedNetworkImage(
-              imageUrl:
-                  'https://xasjpasaatswhxmgvvsg.supabase.co/storage/v1/object/public/product-images/categories/companies-header.jpg',
-              fit: BoxFit.cover,
-              placeholder: (_, __) => Container(color: c.surfaceMuted),
-              errorWidget: (_, __, ___) => Container(color: c.surfaceMuted),
-            )),
-            Positioned.fill(child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.15),
-                    Colors.black.withValues(alpha: 0.72),
-                  ],
-                ),
-              ),
-            )),
-            Padding(
-              padding: const EdgeInsets.all(AppDimensions.space16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    'Andijon gaz va energiya korxonalari',
-                    style: AppTypography.headline.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '$count ta sertifikatlangan hamkor · litsenziyalangan yetkazib beruvchilar',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.caption.copyWith(
-                      color: Colors.white.withValues(alpha: 0.85),
-                    ),
-                  ),
-                ],
-              ),
+    return AppCard(
+      elevation: AppElevation.none,
+      padding: const EdgeInsets.all(AppDimensions.space16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Text(
+            'Andijon gaz va energiya korxonalari',
+            style: AppTypography.headline.copyWith(
+              color: c.textPrimary,
+              fontWeight: FontWeight.w600,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '$count ta hamkor · narx va yetkazishni solishtiring',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.caption.copyWith(
+              color: c.textSecondary,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -248,7 +220,8 @@ class _ComparisonSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.palette;
-    final available = companies.where((company) => company.isAvailable).toList();
+    final available =
+        companies.where((company) => company.isAvailable).toList();
     if (available.isEmpty) return const SizedBox.shrink();
 
     final cheapest =
@@ -346,13 +319,15 @@ class _SummaryCell extends StatelessWidget {
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppTypography.priceSmall.copyWith(color: c.textPrimary, fontSize: 13),
+            style: AppTypography.priceSmall
+                .copyWith(color: c.textPrimary, fontSize: 13),
           ),
           Text(
             caption,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppTypography.caption2.copyWith(color: c.textTertiary, fontSize: 10),
+            style: AppTypography.caption2
+                .copyWith(color: c.textTertiary, fontSize: 10),
           ),
         ],
       ),
