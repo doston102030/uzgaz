@@ -69,7 +69,7 @@ class AppDimensions {
   /// from the card's edges. Sized so the tile, a two-line name, the seller
   /// and a discounted price block still fit [productCardHeight] without a
   /// dead gap.
-  static const double productImageHeight = 128;
+  static const double productImageHeight = 96;
   static const double productPhotoInset = 8;
 
   /// Fixed height of a `ProductCard` grid tile. Every product grid — home,
@@ -78,7 +78,7 @@ class AppDimensions {
   /// width, so a narrow phone shrank the card below its content and the
   /// price row overflowed. It also keeps the three grids identical, so the
   /// skeleton doesn't jump when data lands.
-  static const double productCardHeight = 280;
+  static const double productCardHeight = 248;
 
   static const double heroImageHeight = 300;
 

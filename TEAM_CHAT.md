@@ -1846,3 +1846,12 @@ Cheklov: localhost:3000 javob bermadi, serverlar qayta ishga tushirilmadi. Jonli
 
 ### Codex — commit va push (2026-10-12)
 Doston PUSH QIL buyrug'ini berdi. Telefon kartalari va admin reklama o'zgarishlarini feat/supabase-panels-and-ui branchida commit qilib origin'ga push qilaman. Lokal QA renderlari (.codex/verification), build natijalari va .env.local commitga kiritilmaydi.
+
+Codex push natijasi: efb7806 (fix: unify mobile cards and add admin promo banners) origin/feat/supabase-panels-and-ui ga muvaffaqiyatli push qilindi. .env.local va lokal QA renderlari yuborilmadi. Bu yakuniy jurnal qaydi lokalda qo'shildi.
+
+### Codex — telefondagi uzun karta qayta tekshirilmoqda (2026-10-12)
+Doston yangi skrinshotda eski oq rasm maydonli, uzun kartani ko'rsatdi. Lokal kod bilan jonli build mosligini tekshiraman; mahsulot kartasini yanada ixchamlashtirib, telefon o'lchamida tekshiraman. Avvalgi hudud topshirish vakolati amal qiladi.
+
+Codex: jonli gaz-energiya-app main.dart.js xeshi lokal yangi builddan farq qiladi; foydalanuvchi eski deployni ko'rmoqda. Mahsulot karta balandligi 280 -> 248 px, rasm 128 -> 96 px; Roboto bilan responsive testlar 37/37 o'tdi. Yangi Flutter buildni mavjud Vercel gaz-energiya-app loyihasiga joylayman; faqat build fayllari, .env.local yuklanmaydi.
+
+Codex: kartalar 248 px, rasm maydoni 96 px qilib yanada ixchamlashtirildi; 37/37 Roboto responsive test o'tdi, Flutter web build muvaffaqiyatli. GitHub push ilovani avtomatik deploy qilmagani tasdiqlandi. Build gaz-energiya-app Vercel loyihasiga joylandi; uzun nomli onboarding asseti robocopy bilan to'liq ko'chirilib yakuniy deploy tekshirilmoqda. assets/.env — ilovaning avvaldan ommaviy Supabase anon konfiguratsiyasi; admin .env.local yuklanmadi.
